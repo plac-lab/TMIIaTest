@@ -8,11 +8,11 @@
 `timescale 1ns / 1ps
 
 module Clock_Div #(
-    parameter COUNT_WIDTH=16 //% Width of internal counter, which sets the maximum division factor.
+    parameter WIDTH=6, COUNT_WIDTH=16 //% Width of internal counter, which sets the maximum division factor.
   )(
     input clk_in, //% reference clock input
     input rst,    //% module reset
-    input [COUNT_WIDTH-1:0] div, //% division factor 2**div
+    input [WIDTH-1:0] div, //% division factor 2**div
     output clk_out               //% output of divided clock
   );
 
