@@ -4,6 +4,7 @@ from ctypes import *
 class Cmd:
     # soname = "./build/lib.freebsd-11.0-STABLE-amd64-2.7/command.so"
     soname = "./build/lib.macosx-10.6-x86_64-2.7/command.so"
+    soname = "./build/lib.linux-x86_64-2.7/command.so"
     nmax = 20000
 
     def __init__(self):
