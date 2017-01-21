@@ -257,6 +257,45 @@ ARCHITECTURE Behavioral OF top IS
     );
   END COMPONENT;
   ---------------------------------------------> gig_eth
+  
+  ---------------------------------------------< TOP_SR
+  COMPONENT Top_SR IS
+--    GENERIC (
+--     WIDTH : positive = : 170 ;
+--     COUNT_WIDTH : positive = : 16
+--    );
+    PORT (
+     clk_in      :IN   std_logic;
+     rst         :IN   std_logic;
+     start       :IN   std_logic;
+     din         :IN   std_logic_vector(169 DOWNTO 0);
+     dout_sr_p   :IN   std_logic;
+     dout_sr_n   :IN   std_logic;
+     div         :IN   std_logic_vector(15 DOWNTO 0);
+     clk         :OUT  std_logic;
+     clk_sr_p    :OUT  std_logic;
+     clk_sr_n    :OUT  std_logic;
+     din_sr_p    :OUT  std_logic;
+     din_sr_n    :OUT  std_logic;
+     load_sr_p   :OUT  std_logic;
+     load_sr_n   :OUT  std_logic;
+     dout        :OUT  std_logic_vector(169 DOWNTO 0)
+    );
+  END COMPONENT;
+  ---------------------------------------------> TOP_SR
+  
+  ---------------------------------------------< PULSE_SYNCHRONISE
+  COMPONENT pulse_synchronise
+    PORT (
+      pulse_in     :IN  std_logic;
+      clk_in       :IN  std_logic;
+      clk_out      :IN  std_logic;
+      rst          :IN  std_logic;
+      pulse_out    :OUT std_logic
+     );
+  END COMPONENT;
+  ---------------------------------------------> PULSE_SYNCHRONISE
+  
   ---------------------------------------------< UART/RS232
   COMPONENT control_interface
     PORT (
@@ -610,6 +649,17 @@ ARCHITECTURE Behavioral OF top IS
   ATTRIBUTE mark_debug OF sdram_app_rd_data       : SIGNAL IS "true";
   ATTRIBUTE mark_debug OF sdram_app_rd_data_valid : SIGNAL IS "true";
   ---------------------------------------------> debug
+  ---------------------------------------------< TOP_SR
+  SIGNAL div                               : std_logic_vector (5 DOWNTO 0);
+  SIGNAL din                               : std_logic_vector (169 DOWNTO 0);
+  SIGNAL dout                              : std_logic_vector( 169 DOWNTO 0);
+  SIGNAL clk_sr_contr                      : std_logic;
+  ---------------------------------------------> TOP_SR
+  ---------------------------------------------< PULSE_SYNCHRONISE
+  SIGNAL pulse_in                          : std_logic;
+  SIGNAL clk_out                           : std_logic;
+  SIGNAL pulse_out                         : std_logic;
+  ---------------------------------------------> PULSE_SYNCHRONISE
 
 BEGIN
   ---------------------------------------------< Clock
@@ -675,6 +725,42 @@ BEGIN
     --  );
   END GENERATE dbg_cores;
   ---------------------------------------------> debug : ILA and VIO (`Chipscope')
+  ---------------------------------------------< TOP_SR
+  div <= config_reg(175 DOWNTO 170);
+  din <= config_reg(169 DOWNTO 0);
+  status_reg(169 DOWNTO 0) <= dout(169 DOWNTO 0);
+  Top_SR_0 : Top_SR
+    PORT MAP (
+        clk_in    => clk_100MHz,
+        rst       => reset,
+        start     => pulse_out,
+        din       => din,
+        dout_sr_p => FMC_HPC_LA_P(20),
+        dout_sr_n => FMC_HPC_LA_N(20),
+        div       => div,
+        clk       => clk_sr_contr,
+        clk_sr_p  => FMC_HPC_LA_P(18),
+        clk_sr_n  => FMC_HPC_LA_N(18),
+        din_sr_p  => FMC_HPC_LA_P(17),
+        din_sr_n  => FMC_HPC_LA_N(17),
+        load_sr_p => FMC_HPC_LA_P(19),
+        load_sr_n => FMC_HPC_LA_N(19),
+        dout      => dout
+    );
+  ---------------------------------------------> TOP_SR
+  
+  ---------------------------------------------< PULSE_SYNCHRONISE
+  pulse_in <= pulse_reg(0);
+  pulse_synchronise_0 : pulse_synchronise
+    PORT MAP (
+      pulse_in   => pulse_in,
+      clk_in     => control_clk,
+      clk_out    => clk_sr_contr,
+      rst        => reset,
+      pulse_out  => pulse_out
+      );
+  ---------------------------------------------> PULSE_SYNCHRONISE
+
   ---------------------------------------------< UART/RS232
   uart_cores : IF false GENERATE
     uartio_inst : uartio
