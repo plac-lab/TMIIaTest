@@ -1,23 +1,10 @@
--------------------------------------------------------------------------------
--- Title      : Toplevel module for KCU105 eval board.
--- Project    : K7UGbE
--------------------------------------------------------------------------------
--- File       : top.vhd
--- Author     : Yuan Mei
--- Company    : LBNL
--- Created    : 2016-11-19
--- Last update: 2016-11-19
--- Platform   : 
--- Standard   : VHDL'93/02
--------------------------------------------------------------------------------
--- Description: Kintex-7 Ultrascale xcku040ffva1156e-2
--------------------------------------------------------------------------------
--- Copyright (c) 2016 
--------------------------------------------------------------------------------
--- Revisions  :
--- Date        Version  Author  Description
--- 2016-11-19  1.0      ymei	Created
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--! @file top.vhd
+--! @brief Toplevel module for KCU105 eval board.
+--! @author Yuan Mei
+--!
+--! Target Devices: Kintex-7 Ultrascale xcku040ffva1156e-2
+--------------------------------------------------------------------------------
 
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
@@ -31,6 +18,9 @@ USE ieee.numeric_std.ALL;
 LIBRARY UNISIM;
 USE UNISIM.VComponents.ALL;
 
+LIBRARY work;
+USE work.utility.ALL;
+
 ENTITY top IS
   GENERIC (
     ENABLE_DEBUG       : boolean := false;
@@ -39,11 +29,11 @@ ENTITY top IS
   );
   PORT (
     SYS_RST      : IN    std_logic;
-    SYS_CLK_P    : IN    std_logic;     -- 300MHz
+    SYS_CLK_P    : IN    std_logic;     --! 300MHz
     SYS_CLK_N    : IN    std_logic;
-    SYS125_CLK_P : IN    std_logic;     -- 125MHz
+    SYS125_CLK_P : IN    std_logic;     --! 125MHz
     SYS125_CLK_N : IN    std_logic;
-    USER_CLK_P   : IN    std_logic;     -- 156.250MHz
+    USER_CLK_P   : IN    std_logic;     --! 156.250MHz
     USER_CLK_N   : IN    std_logic;
     --
     LED8Bit      : OUT   std_logic_vector(7 DOWNTO 0);
@@ -58,7 +48,7 @@ ENTITY top IS
     PHY_RESET_N  : OUT   std_logic;
     MDIO         : INOUT std_logic;
     MDC          : OUT   std_logic;
-    SGMII_CLK_P  : IN    std_logic;     -- 625MHz
+    SGMII_CLK_P  : IN    std_logic;     --! 625MHz
     SGMII_CLK_N  : IN    std_logic;
     SGMII_RX_P   : IN    std_logic;
     SGMII_RX_N   : IN    std_logic;
@@ -90,7 +80,7 @@ ARCHITECTURE Behavioral OF top IS
       GLBL_RST             : IN    std_logic;
       -- clocks
       SYS_CLK              : IN    std_logic;
-      SGMII125_CLK         : OUT   std_logic;  -- routed back OUT, single-ended
+      SGMII125_CLK         : OUT   std_logic;  -- routed back out, single-ended
       -- PHY interface
       PHY_RESETN           : OUT   std_logic;
       -- SGMII interface
@@ -158,60 +148,6 @@ ARCHITECTURE Behavioral OF top IS
       DATA_FIFO_EMPTY : IN  std_logic;
       DATA_FIFO_RDREQ : OUT std_logic;
       DATA_FIFO_RDCLK : OUT std_logic
-    );
-  END COMPONENT;
-  COMPONENT pulse2pulse
-    PORT (
-      IN_CLK   : IN  std_logic;
-      OUT_CLK  : IN  std_logic;
-      RST      : IN  std_logic;
-      PULSEIN  : IN  std_logic;
-      INBUSY   : OUT std_logic;
-      PULSEOUT : OUT std_logic
-    );
-  END COMPONENT;
-  COMPONENT edge_sync IS
-    GENERIC (
-      EDGE : std_logic := '1'  -- '1'  :  rising edge,  '0' falling edge
-    );
-    PORT (
-      RESET : IN  std_logic;
-      CLK   : IN  std_logic;
-      EI    : IN  std_logic;
-      SO    : OUT std_logic
-    );
-  END COMPONENT;
-  COMPONENT pulsegen
-    GENERIC (
-      COUNTER_WIDTH : positive := 16
-    );
-    PORT (
-      CLK    : IN  std_logic;
-      PERIOD : IN  std_logic_vector(COUNTER_WIDTH-1 DOWNTO 0);
-      I      : IN  std_logic;
-      O      : OUT std_logic
-    );
-  END COMPONENT;
-  COMPONENT clk_div IS
-    GENERIC (
-      WIDTH : positive := 16;
-      PBITS : positive := 4             -- log2(WIDTH)
-    );
-    PORT (
-      RESET   : IN  std_logic;
-      CLK     : IN  std_logic;
-      DIV     : IN  std_logic_vector(PBITS-1 DOWNTO 0);
-      CLK_DIV : OUT std_logic
-    );
-  END COMPONENT;
-  COMPONENT clk_fwd
-    GENERIC (
-      INV : boolean := false
-    );
-    PORT (
-      R : IN  std_logic;
-      I : IN  std_logic;
-      O : OUT std_logic
     );
   END COMPONENT;
   ---------------------------------------------< debug : ILA and VIO (`Chipscope')
@@ -460,17 +396,6 @@ BEGIN
   END GENERATE gig_eth_cores;
   ---------------------------------------------> gig_eth
 
-  --PROCESS (sys125_clk, reset) IS
-  --  VARIABLE led_cnt : unsigned(25 DOWNTO 0) := (OTHERS => '0');
-  --BEGIN  -- PROCESS
-  --  IF reset = '1' THEN                 -- asynchronous reset (active high)
-  --    led_cnt := (OTHERS => '0');
-  --  ELSIF rising_edge(sys125_clk) THEN  -- rising clock edge
-  --    led_cnt                     := led_cnt + 1;
-  --    usr_data_output(1 DOWNTO 0) <= std_logic_vector(led_cnt(25-2 DOWNTO 22));
-  --  END IF;
-  --END PROCESS;
-
   PROCESS (sgmii125_clk, reset) IS
     VARIABLE led_cnt : unsigned(25 DOWNTO 0) := (OTHERS => '0');
   BEGIN  -- PROCESS
@@ -478,11 +403,11 @@ BEGIN
       led_cnt := (OTHERS => '0');
     ELSIF rising_edge(sgmii125_clk) THEN  -- rising clock edge
       led_cnt                     := led_cnt + 1;
-      usr_data_output(1 DOWNTO 0) <= std_logic_vector(led_cnt(25-2 DOWNTO 22));
+      usr_data_output(3 DOWNTO 2) <= std_logic_vector(led_cnt(25-1 DOWNTO 23));
     END IF;
   END PROCESS;
 
-  usr_data_output(7 DOWNTO 2) <= gig_eth_status(16) & gig_eth_status(7) & gig_eth_status(3 DOWNTO 0);
+  usr_data_output(7 DOWNTO 4) <= gig_eth_status(16) & gig_eth_status(7) & gig_eth_status(3 DOWNTO 2);
   -- usr_data_output <= gig_eth_status(15 DOWNTO 8);
 
   led_obufs : FOR i IN 0 TO 7 GENERATE
