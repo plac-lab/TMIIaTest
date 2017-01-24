@@ -171,7 +171,7 @@ ARCHITECTURE Behavioral OF top IS
      din         :IN   std_logic_vector(169 DOWNTO 0);
      dout_sr_p   :IN   std_logic;
      dout_sr_n   :IN   std_logic;
-     div         :IN   std_logic_vector(15 DOWNTO 0);
+     div         :IN   std_logic_vector(5 DOWNTO 0);
      clk         :OUT  std_logic;
      clk_sr_p    :OUT  std_logic;
      clk_sr_n    :OUT  std_logic;
@@ -287,7 +287,7 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL gig_eth_status                    : std_logic_vector(31 DOWNTO 0);
   ---------------------------------------------> gig_eth
   ---------------------------------------------< TOP_SR
-  SIGNAL div                               : std_logic_vector (15 DOWNTO 0);
+  SIGNAL div                               : std_logic_vector (5 DOWNTO 0);
   SIGNAL din                               : std_logic_vector (169 DOWNTO 0);
   SIGNAL dout                              : std_logic_vector( 169 DOWNTO 0);
   SIGNAL clk_sr_contr                      : std_logic;
@@ -477,7 +477,7 @@ BEGIN
   END GENERATE led_obufs;
 
   ---------------------------------------------< TOP_SR
-  div                      <= config_reg(185 DOWNTO 170);
+  div                      <= config_reg(175 DOWNTO 170);
   din                      <= config_reg(169 DOWNTO 0);
   status_reg(169 DOWNTO 0) <= dout(169 DOWNTO 0);
   Top_SR_0 : Top_SR

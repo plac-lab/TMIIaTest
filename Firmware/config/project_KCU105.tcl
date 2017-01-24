@@ -149,7 +149,7 @@ set files [list \
  "[file normalize "$origin_dir/../src/clk_div.vhd"]"\
  "[file normalize "$origin_dir/../src/pulsegen.vhd"]"\
  "[file normalize "$origin_dir/../src/tm_shiftreg_rw/pulse_synchronise.v"]"\
- "[file normalize "$origin_dir/../src/tm_shiftreg_rw/Recieve_Data.v"]"\
+ "[file normalize "$origin_dir/../src/tm_shiftreg_rw/Receive_Data.v"]"\
  "[file normalize "$origin_dir/../src/tm_shiftreg_rw/SR_Control.v"]"\
  "[file normalize "$origin_dir/../src/tm_shiftreg_rw/Top_SR.v"]"\
  "[file normalize "$origin_dir/../src/tm_shiftreg_rw/Clock_Div.v"]"\
