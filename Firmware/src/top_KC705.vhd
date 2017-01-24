@@ -728,7 +728,7 @@ BEGIN
   ---------------------------------------------< TOP_SR
   div <= config_reg(175 DOWNTO 170);
   din <= config_reg(169 DOWNTO 0);
- -- status_reg(169 DOWNTO 0) <= dout(169 DOWNTO 0);
+  status_reg(169 DOWNTO 0) <= dout(169 DOWNTO 0);
   Top_SR_0 : Top_SR
     PORT MAP (
         clk_in    => clk_100MHz,
@@ -1096,12 +1096,12 @@ BEGIN
       POST_TRIGGER          => config_reg(32*5+27 DOWNTO 32*5),
       WR_BUSY               => idata_data_wr_busy,
       WR_POINTER            => OPEN,
-      TRIGGER_POINTER       => status_reg(64*2+27 DOWNTO 64*2),
+      --TRIGGER_POINTER       => status_reg(64*2+27 DOWNTO 64*2),
       WR_WRAPPED            => idata_data_wr_wrapped,
       RD_START              => pulse_reg(5),
       RD_ADDR_BEGIN         => (OTHERS => '0'),
       RD_ADDR_END           => config_reg(32*6+27 DOWNTO 32*6),
-      RD_BUSY               => status_reg(64*2+30),
+      --RD_BUSY               => status_reg(64*2+30),
       --
       DATA_FIFO_RESET       => idata_data_fifo_reset,
       INDATA_FIFO_WRCLK     => idata_adc_data_clk,
@@ -1125,8 +1125,8 @@ BEGIN
       DBG_APP_RD_DATA_VALID => sdram_app_rd_data_valid
     );
   idata_data_fifo_reset <= pulse_reg(2);
-  status_reg(64*2+28)    <= idata_data_wr_busy;
-  status_reg(64*2+29)    <= idata_data_wr_wrapped;
+  --status_reg(64*2+28)    <= idata_data_wr_busy;
+  --status_reg(64*2+29)    <= idata_data_wr_wrapped;
   --
   channel_sel_inst : channel_sel
     PORT MAP (

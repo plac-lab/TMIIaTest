@@ -35,19 +35,26 @@ def shift_register_rw(s, data_to_send, clk_div):
     s.sendall(cmdstr)
 
     # read back
+    cmdstr = ""
+    for i in xrange(11):
+        cmdstr += cmd.read_status(10-i)
+    s.sendall(cmdstr)
+    retw = s.recv(4*11)
+    print [hex(ord(w)) for w in retw]
     ret = 0
-    # s.recv()
+    for i in xrange(11):
+        ret = ret | int(ord(retw[i*4+2])) << ((10-i) * 16 + 8) | int(ord(retw[i*4+3])) << ((10-i) * 16)
+    print "%x" % ret
     return ret
 
 if __name__ == "__main__":
     host = '192.168.2.3'
-    host = '127.0.0.1'
-    port = 2024
+    port = 1024
     s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     s.connect((host,port))
 
     data_in=123456
-    div=12
+    div=2
     shift_register_rw(s, data_in, div)
 
     s.close()
