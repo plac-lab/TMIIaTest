@@ -163,6 +163,11 @@ set files [list \
  "[file normalize "$origin_dir/../src/ten_gig_eth/KC705/pcs_pma/ten_gig_eth_pcs_pma_0_support.vhd"]"\
  "[file normalize "$origin_dir/../ipcore_dir/KC705/mig_7series_0/mig_a.prj"]"\
  "[file normalize "$origin_dir/../src/utility_pkg.vhd"]"\
+ "[file normalize "$origin_dir/../src/tm_shiftreg_rw/Clock_Div.v"]"\
+ "[file normalize "$origin_dir/../src/tm_shiftreg_rw/pulse_synchronise.v"]"\
+ "[file normalize "$origin_dir/../src/tm_shiftreg_rw/Receive_Data.v"]"\
+ "[file normalize "$origin_dir/../src/tm_shiftreg_rw/SR_Control.v"]"\
+ "[file normalize "$origin_dir/../src/tm_shiftreg_rw/Top_SR.v"]"\
 ]
 add_files -norecurse -fileset $obj $files
 

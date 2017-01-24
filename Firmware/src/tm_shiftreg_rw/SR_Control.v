@@ -1,33 +1,22 @@
+//% @file SR_Control.v
+//% @brief Generate control signals that are sent to shift register.
+//% @author pyxiong
+//% 
+//% when start is asserted, output signals will be sent to 
+//% shift register. 
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: ccnu
-// Engineer: Poyi Xiong
-// 
-// Create Date: 01/12/2017 01:17:19 PM
-// Design Name: 
-// Module Name: SR_Control
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
-
-module SR_Control #(parameter DATA_WIDTH=170, CNT_WIDTH=8) (
-    input [DATA_WIDTH-1:0] din,
-    input clk,
-    input rst,
-    input start,
-    output reg din_sr,
-    output reg load_sr,
-    output clk_sr
+module SR_Control #(
+    parameter DATA_WIDTH=170, //% @param width of data input
+    parameter CNT_WIDTH=8 //% @param width of internal counter
+   ) (
+    input [DATA_WIDTH-1:0] din, //% 170-bit data input
+    input clk, //% control clock
+    input rst, //% module reset
+    input start, //% start signal
+    output reg din_sr, //% data sent to shift register
+    output reg load_sr, //% load signal sent to shift register
+    output clk_sr //% clock signal sent to shift register
     );
     
 reg [4:0] current_state_out, next_state_out;

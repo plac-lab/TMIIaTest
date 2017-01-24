@@ -1,34 +1,24 @@
+//% @file Receive_Data.v
+//% @brief This module is used to receive data from TMIIa shift register.
+//% @author pyxiong
+//% 
+//% When start is asserted, new data will be sent to shift register one by one, 
+//% at the same time , the orginal data stored in shift register will be sent to 
+//% this module, when 170-bit data are received, a 170-bit width data will come 
+//% to the output port of this module.
+//% 
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 01/13/2017 01:06:46 PM
-// Design Name: 
-// Module Name: Recieve_Data
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
-
-module Recieve_Data #(parameter DATA_WIDTH=170, CNT_WIDTH=8) (
-    input dout_sr,
-    input clk,
-    input rst,
-    input load_sr,
-    output reg [DATA_WIDTH-1:0] dout
+module Receive_Data #(parameter DATA_WIDTH=170,  //% @param width of data
+                      parameter CNT_WIDTH=8 //% @param width of internal counter.
+   ) (
+    input dout_sr, //% original data stored in shift register
+    input clk, //% control clock
+    input rst, //% module reset
+    input start, //% start signal
+    output reg [DATA_WIDTH-1:0] dout //% origianl 170-bit data stored in shift register 
     );
 reg [2:0] current_state_in, next_state_in;
-//reg load_tmp;
 reg [DATA_WIDTH-1:0] dout_tmp;
 reg [CNT_WIDTH:0] cnt;    
 
@@ -50,7 +40,7 @@ else
  end
 end
 
-always@(current_state_in or rst or load_sr or cnt)
+always@(current_state_in or rst or start or cnt)
 begin
 if(rst)
  begin
@@ -59,7 +49,7 @@ if(rst)
 else
  begin
   case(current_state_in)
-    s0: next_state_in=(load_sr==1'b1)?s1:s0; 
+    s0: next_state_in=(start==1'b1)?s1:s0; 
     s1: next_state_in=s2;     
     s2: next_state_in=(cnt==DATA_WIDTH)?s0:s2;
     default: next_state_in=s0;

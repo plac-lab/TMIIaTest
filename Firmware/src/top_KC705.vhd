@@ -271,7 +271,7 @@ ARCHITECTURE Behavioral OF top IS
      din         :IN   std_logic_vector(169 DOWNTO 0);
      dout_sr_p   :IN   std_logic;
      dout_sr_n   :IN   std_logic;
-     div         :IN   std_logic_vector(15 DOWNTO 0);
+     div         :IN   std_logic_vector(5 DOWNTO 0);
      clk         :OUT  std_logic;
      clk_sr_p    :OUT  std_logic;
      clk_sr_n    :OUT  std_logic;
@@ -728,7 +728,7 @@ BEGIN
   ---------------------------------------------< TOP_SR
   div <= config_reg(175 DOWNTO 170);
   din <= config_reg(169 DOWNTO 0);
-  status_reg(169 DOWNTO 0) <= dout(169 DOWNTO 0);
+ -- status_reg(169 DOWNTO 0) <= dout(169 DOWNTO 0);
   Top_SR_0 : Top_SR
     PORT MAP (
         clk_in    => clk_100MHz,
@@ -766,7 +766,7 @@ BEGIN
     uartio_inst : uartio
       GENERIC MAP (
         -- tick repetition frequency is (input freq) / (2**COUNTER_WIDTH / DIVISOR)
-        COUNTER_WIDTH => 16,
+        COUNTER_WIDTH => 6,
         DIVISOR       => 1208*2
       )
       PORT MAP (

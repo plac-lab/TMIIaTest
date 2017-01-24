@@ -1,31 +1,16 @@
+//% @file pulse_synchronise.v
+//% @brief clock domain crossing pulse's synchronisation.
+//% @author pyxiong
+//%  
+//% pulse_in is in clk_in domain, pulse_out is in clk_out domain. 
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 01/09/2017 07:51:58 PM
-// Design Name: 
-// Module Name: pulse_synchronise
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module pulse_synchronise(
-    input pulse_in,
-    input clk_in,
-    input clk_out,
-    input rst,
-    output reg pulse_out
+    input pulse_in, //% input pulse 
+    input clk_in, //% pulse_in control clock
+    input clk_out, //% pulse_out control clock
+    input rst, //% module reset
+    output reg pulse_out //% output pulse
     );
  reg set;
  reg in_reg1,in_reg2,in_reg3;

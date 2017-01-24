@@ -1,41 +1,30 @@
+//% @file Top_SR.v
+//% @brief TMIIa shift register control module.
+//% @author pyxiong
+//% 
+//% This module is used to generate shift register control signals,
+//% and receive the output data of TMIIa shift register .
+//%
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: ccnu
-// Engineer: Poyi Xiong
-// 
-// Create Date: 01/13/2017 02:15:00 PM
-// Design Name: 
-// Module Name: Top_SR
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
-
-module Top_SR #(parameter WIDTH=170, COUNT_WIDTH=16) (
-    input clk_in,
-    input rst,
-    input start,
-    input [WIDTH-1:0] din,
-    input dout_sr_p,
-    input dout_sr_n,
-    input [COUNT_WIDTH-1:0] div,
-    output clk,
-    output clk_sr_p,
-    output clk_sr_n, 
-    output din_sr_p,
-    output din_sr_n,
-    output load_sr_p,
-    output load_sr_n,
-    output [WIDTH-1:0] dout
+module Top_SR #(parameter WIDTH=170, //% @param Width of data input and output
+                parameter DIV_WIDTH=6  //% @param width of division factor.
+   ) (
+    input clk_in, //% clock input is synchronised with input signals control clock.
+    input rst, //% module reset 
+    input start, //% start signal 
+    input [WIDTH-1:0] din, //% 170-bit data input to config shift register
+    input dout_sr_p, //% data from shift register
+    input dout_sr_n, //% data from shift register
+    input [DIV_WIDTH-1:0] div, //% division factor 2**div
+    output clk, //% sub modules' control clock
+    output clk_sr_p, //% control clock send to shift register
+    output clk_sr_n, //% control clock send to shift register
+    output din_sr_p, //% data send to shift register
+    output din_sr_n, //% data send to shift register
+    output load_sr_p, //% load signal send to shift register
+    output load_sr_n, //% load signal send to shift register
+    output [WIDTH-1:0] dout //% original data stored in shift register
     );
  
 wire dout_sr;
@@ -67,8 +56,7 @@ OBUFDS OBUFDS_inst3 (
   );
 
 
-Clock_Div #(.COUNT_WIDTH(16))
-     clock_div_0(
+Clock_Div clock_div_0(
         .clk_in(clk_in),
         .rst(rst),
         .div(div),
@@ -86,12 +74,12 @@ SR_Control #(.DATA_WIDTH(170), .CNT_WIDTH(8))
          .clk_sr(clk_sr)
         );
         
-Recieve_Data #(.DATA_WIDTH(170), .CNT_WIDTH(8))
-     recieve_data_0(
+Receive_Data #(.DATA_WIDTH(170), .CNT_WIDTH(8))
+     receive_data_0(
         .dout_sr(dout_sr),
         .clk(clk),
         .rst(rst),
-        .load_sr(load_sr),
+        .start(start),
         .dout(dout)
         );                         
 endmodule
