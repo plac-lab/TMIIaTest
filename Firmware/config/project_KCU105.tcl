@@ -106,18 +106,18 @@ if {[string equal [get_filesets -quiet sources_1] ""]} {
 # Set 'sources_1' fileset object
 set obj [get_filesets sources_1]
 set files [list \
- "[file normalize "$origin_dir/../src/gig_eth/common/tri_mode_ethernet_mac_0_sync_block.vhd"]"\
- "[file normalize "$origin_dir/../src/gig_eth/fifo/tri_mode_ethernet_mac_0_bram_tdp.vhd"]"\
- "[file normalize "$origin_dir/../src/gig_eth/fifo/tri_mode_ethernet_mac_0_tx_client_fifo.vhd"]"\
- "[file normalize "$origin_dir/../src/gig_eth/fifo/tri_mode_ethernet_mac_0_rx_client_fifo.vhd"]"\
+ "[file normalize "$origin_dir/../src/gig_eth/KCU105/common/tri_mode_ethernet_mac_0_sync_block.vhd"]"\
+ "[file normalize "$origin_dir/../src/gig_eth/KCU105/fifo/tri_mode_ethernet_mac_0_bram_tdp.vhd"]"\
+ "[file normalize "$origin_dir/../src/gig_eth/KCU105/fifo/tri_mode_ethernet_mac_0_tx_client_fifo.vhd"]"\
+ "[file normalize "$origin_dir/../src/gig_eth/KCU105/fifo/tri_mode_ethernet_mac_0_rx_client_fifo.vhd"]"\
  "[file normalize "$origin_dir/../src/gig_eth/tcp_server/com5402pkg.vhd"]"\
  "[file normalize "$origin_dir/../src/gig_eth/tcp_server/bram_dp.vhd"]"\
  "[file normalize "$origin_dir/../src/gig_eth/tcp_server/whois2.vhd"]"\
  "[file normalize "$origin_dir/../src/gig_eth/tcp_server/udp_rx.vhd"]"\
  "[file normalize "$origin_dir/../src/gig_eth/tcp_server/udp2serial.vhd"]"\
- "[file normalize "$origin_dir/../src/gig_eth/fifo/tri_mode_ethernet_mac_0_ten_100_1g_eth_fifo.vhd"]"\
- "[file normalize "$origin_dir/../src/gig_eth/support/tri_mode_ethernet_mac_0_support.vhd"]"\
- "[file normalize "$origin_dir/../src/gig_eth/common/tri_mode_ethernet_mac_0_reset_sync.vhd"]"\
+ "[file normalize "$origin_dir/../src/gig_eth/KCU105/fifo/tri_mode_ethernet_mac_0_ten_100_1g_eth_fifo.vhd"]"\
+ "[file normalize "$origin_dir/../src/gig_eth/KCU105/support/tri_mode_ethernet_mac_0_support.vhd"]"\
+ "[file normalize "$origin_dir/../src/gig_eth/KCU105/common/tri_mode_ethernet_mac_0_reset_sync.vhd"]"\
  "[file normalize "$origin_dir/../src/gig_eth/tcp_server/timer_4us.vhd"]"\
  "[file normalize "$origin_dir/../src/gig_eth/tcp_server/tcp_txbuf.vhd"]"\
  "[file normalize "$origin_dir/../src/gig_eth/tcp_server/tcp_tx.vhd"]"\
@@ -128,16 +128,16 @@ set files [list \
  "[file normalize "$origin_dir/../src/gig_eth/tcp_server/packet_parsing.vhd"]"\
  "[file normalize "$origin_dir/../src/gig_eth/tcp_server/arp_cache2.vhd"]"\
  "[file normalize "$origin_dir/../src/gig_eth/tcp_server/arp.vhd"]"\
- "[file normalize "$origin_dir/../src/gig_eth/axi_lite_sm/tri_mode_ethernet_mac_0_axi_lite_sm.vhd"]"\
+ "[file normalize "$origin_dir/../src/gig_eth/KCU105/axi_lite_sm/tri_mode_ethernet_mac_0_axi_lite_sm.vhd"]"\
  "[file normalize "$origin_dir/../src/global_resetter.vhd"]"\
- "[file normalize "$origin_dir/../src/gig_eth/gig_eth_mac_resets.vhd"]"\
- "[file normalize "$origin_dir/../src/gig_eth/gig_eth_mac_fifo_block.vhd"]"\
+ "[file normalize "$origin_dir/../src/gig_eth/KCU105/gig_eth_mac_resets.vhd"]"\
+ "[file normalize "$origin_dir/../src/gig_eth/KCU105/gig_eth_mac_fifo_block.vhd"]"\
  "[file normalize "$origin_dir/../src/gig_eth/tcp_server/com5402.vhd"]"\
  "[file normalize "$origin_dir/../src/global_clock_reset.vhd"]"\
- "[file normalize "$origin_dir/../src/gig_eth/gig_eth.vhd"]"\
+ "[file normalize "$origin_dir/../src/gig_eth/KCU105/gig_eth.vhd"]"\
  "[file normalize "$origin_dir/../src/control_interface.vhd"]"\
  "[file normalize "$origin_dir/../src/utility_pkg.vhd"]"\
- "[file normalize "$origin_dir/../src/top.vhd"]"\
+ "[file normalize "$origin_dir/../src/top_KCU105.vhd"]"\
  "[file normalize "$origin_dir/../src/tickgen.vhd"]"\
  "[file normalize "$origin_dir/../src/channel_sel.vhd"]"\
  "[file normalize "$origin_dir/../src/clk_fwd.vhd"]"\
@@ -148,26 +148,31 @@ set files [list \
  "[file normalize "$origin_dir/../src/pulse2pulse.vhd"]"\
  "[file normalize "$origin_dir/../src/clk_div.vhd"]"\
  "[file normalize "$origin_dir/../src/pulsegen.vhd"]"\
+ "[file normalize "$origin_dir/../src/tm_shiftreg_rw/pulse_synchronise.v"]"\
+ "[file normalize "$origin_dir/../src/tm_shiftreg_rw/Recieve_Data.v"]"\
+ "[file normalize "$origin_dir/../src/tm_shiftreg_rw/SR_Control.v"]"\
+ "[file normalize "$origin_dir/../src/tm_shiftreg_rw/Top_SR.v"]"\
+ "[file normalize "$origin_dir/../src/tm_shiftreg_rw/Clock_Div.v"]"\
 ]
 add_files -norecurse -fileset $obj $files
 
 # Set 'sources_1' fileset file properties for remote files
-set file "$origin_dir/../src/gig_eth/common/tri_mode_ethernet_mac_0_sync_block.vhd"
+set file "$origin_dir/../src/gig_eth/KCU105/common/tri_mode_ethernet_mac_0_sync_block.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
-set file "$origin_dir/../src/gig_eth/fifo/tri_mode_ethernet_mac_0_bram_tdp.vhd"
+set file "$origin_dir/../src/gig_eth/KCU105/fifo/tri_mode_ethernet_mac_0_bram_tdp.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
-set file "$origin_dir/../src/gig_eth/fifo/tri_mode_ethernet_mac_0_tx_client_fifo.vhd"
+set file "$origin_dir/../src/gig_eth/KCU105/fifo/tri_mode_ethernet_mac_0_tx_client_fifo.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
-set file "$origin_dir/../src/gig_eth/fifo/tri_mode_ethernet_mac_0_rx_client_fifo.vhd"
+set file "$origin_dir/../src/gig_eth/KCU105/fifo/tri_mode_ethernet_mac_0_rx_client_fifo.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
@@ -197,17 +202,17 @@ set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
-set file "$origin_dir/../src/gig_eth/fifo/tri_mode_ethernet_mac_0_ten_100_1g_eth_fifo.vhd"
+set file "$origin_dir/../src/gig_eth/KCU105/fifo/tri_mode_ethernet_mac_0_ten_100_1g_eth_fifo.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
-set file "$origin_dir/../src/gig_eth/support/tri_mode_ethernet_mac_0_support.vhd"
+set file "$origin_dir/../src/gig_eth/KCU105/support/tri_mode_ethernet_mac_0_support.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
-set file "$origin_dir/../src/gig_eth/common/tri_mode_ethernet_mac_0_reset_sync.vhd"
+set file "$origin_dir/../src/gig_eth/KCU105/common/tri_mode_ethernet_mac_0_reset_sync.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
@@ -262,7 +267,7 @@ set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
-set file "$origin_dir/../src/gig_eth/axi_lite_sm/tri_mode_ethernet_mac_0_axi_lite_sm.vhd"
+set file "$origin_dir/../src/gig_eth/KCU105/axi_lite_sm/tri_mode_ethernet_mac_0_axi_lite_sm.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
@@ -272,12 +277,12 @@ set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
-set file "$origin_dir/../src/gig_eth/gig_eth_mac_resets.vhd"
+set file "$origin_dir/../src/gig_eth/KCU105/gig_eth_mac_resets.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
-set file "$origin_dir/../src/gig_eth/gig_eth_mac_fifo_block.vhd"
+set file "$origin_dir/../src/gig_eth/KCU105/gig_eth_mac_fifo_block.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
@@ -292,7 +297,7 @@ set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
-set file "$origin_dir/../src/gig_eth/gig_eth.vhd"
+set file "$origin_dir/../src/gig_eth/KCU105/gig_eth.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
@@ -307,7 +312,7 @@ set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
-set file "$origin_dir/../src/top.vhd"
+set file "$origin_dir/../src/top_KCU105.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
@@ -362,6 +367,11 @@ set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
+set file "$origin_dir/../src/tm_shiftreg_rw/pulse_synchronise.v"
+set file [file normalize $file]
+set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
+set_property "file_type" "Verilog" $file_obj
+
 # Set 'sources_1' fileset file properties for local files
 # None
 
@@ -372,7 +382,7 @@ set_property "top" "top" $obj
 # Set 'sources_1' fileset object
 set obj [get_filesets sources_1]
 set files [list \
- "[file normalize "$origin_dir/../ipcore_dir/tri_mode_ethernet_mac_0/tri_mode_ethernet_mac_0.xci"]"\
+ "[file normalize "$origin_dir/../ipcore_dir/KCU105/tri_mode_ethernet_mac_0/tri_mode_ethernet_mac_0.xci"]"\
 ]
 add_files -norecurse -fileset $obj $files
 
@@ -385,7 +395,7 @@ add_files -norecurse -fileset $obj $files
 # Set 'sources_1' fileset object
 set obj [get_filesets sources_1]
 set files [list \
- "[file normalize "$origin_dir/../ipcore_dir/fifo32to8/fifo32to8.xci"]"\
+ "[file normalize "$origin_dir/../ipcore_dir/KCU105/fifo32to8/fifo32to8.xci"]"\
 ]
 add_files -norecurse -fileset $obj $files
 
@@ -398,7 +408,7 @@ add_files -norecurse -fileset $obj $files
 # Set 'sources_1' fileset object
 set obj [get_filesets sources_1]
 set files [list \
- "[file normalize "$origin_dir/../ipcore_dir/fifo8to32/fifo8to32.xci"]"\
+ "[file normalize "$origin_dir/../ipcore_dir/KCU105/fifo8to32/fifo8to32.xci"]"\
 ]
 add_files -norecurse -fileset $obj $files
 
@@ -411,7 +421,7 @@ add_files -norecurse -fileset $obj $files
 # Set 'sources_1' fileset object
 set obj [get_filesets sources_1]
 set files [list \
- "[file normalize "$origin_dir/../ipcore_dir/clockwiz/clockwiz.xci"]"\
+ "[file normalize "$origin_dir/../ipcore_dir/KCU105/clockwiz/clockwiz.xci"]"\
 ]
 add_files -norecurse -fileset $obj $files
 
@@ -424,7 +434,7 @@ add_files -norecurse -fileset $obj $files
 # Set 'sources_1' fileset object
 set obj [get_filesets sources_1]
 set files [list \
- "[file normalize "$origin_dir/../ipcore_dir/gig_ethernet_pcs_pma_0/gig_ethernet_pcs_pma_0.xci"]"\
+ "[file normalize "$origin_dir/../ipcore_dir/KCU105/gig_ethernet_pcs_pma_0/gig_ethernet_pcs_pma_0.xci"]"\
 ]
 add_files -norecurse -fileset $obj $files
 
@@ -437,7 +447,7 @@ add_files -norecurse -fileset $obj $files
 # Set 'sources_1' fileset object
 set obj [get_filesets sources_1]
 set files [list \
- "[file normalize "$origin_dir/../ipcore_dir/fifo36x512/fifo36x512.xci"]"\
+ "[file normalize "$origin_dir/../ipcore_dir/KCU105/fifo36x512/fifo36x512.xci"]"\
 ]
 add_files -norecurse -fileset $obj $files
 
@@ -456,9 +466,9 @@ if {[string equal [get_filesets -quiet constrs_1] ""]} {
 set obj [get_filesets constrs_1]
 
 # Add/Import constrs file and set constrs file properties
-set file "[file normalize "$origin_dir/../src/top.xdc"]"
+set file "[file normalize "$origin_dir/../src/top_KCU105.xdc"]"
 set file_added [add_files -norecurse -fileset $obj $file]
-set file "$origin_dir/../src/top.xdc"
+set file "$origin_dir/../src/top_KCU105.xdc"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets constrs_1] [list "*$file"]]
 set_property "file_type" "XDC" $file_obj
@@ -473,7 +483,7 @@ set_property "file_type" "XDC" $file_obj
 
 # Set 'constrs_1' fileset properties
 set obj [get_filesets constrs_1]
-set_property "target_constrs_file" "[file normalize "$origin_dir/../src/top.xdc"]" $obj
+set_property "target_constrs_file" "[file normalize "$origin_dir/../src/top_KCU105.xdc"]" $obj
 
 # Create 'sim_1' fileset (if not found)
 if {[string equal [get_filesets -quiet sim_1] ""]} {

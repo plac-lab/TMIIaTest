@@ -53,7 +53,15 @@ ENTITY top IS
     SGMII_RX_P   : IN    std_logic;
     SGMII_RX_N   : IN    std_logic;
     SGMII_TX_P   : OUT   std_logic;
-    SGMII_TX_N   : OUT   std_logic
+    SGMII_TX_N   : OUT   std_logic;
+    -- FMC HPC
+    FMC_HPC_HA_P     :INOUT    std_logic_vector(23 DOWNTO 0);
+    FMC_HPC_HA_N     :INOUT    std_logic_vector(23 DOWNTO 0);
+    FMC_HPC_LA_P     :INOUT    std_logic_vector(33 DOWNTO 0);
+    FMC_HPC_LA_N     :INOUT    std_logic_vector(33 DOWNTO 0);
+    -- FMC LPC
+    FMC_LPC_LA_P     :INOUT    std_logic_vector(33 DOWNTO 0);
+    FMC_LPC_LA_N     :INOUT    std_logic_vector(33 DOWNTO 0)
   );
 END top;
 
@@ -150,6 +158,42 @@ ARCHITECTURE Behavioral OF top IS
       DATA_FIFO_RDCLK : OUT std_logic
     );
   END COMPONENT;
+  ---------------------------------------------< TOP_SR
+  COMPONENT Top_SR IS
+--    GENERIC (
+--     WIDTH : positive = : 170 ;
+--     COUNT_WIDTH : positive = : 16
+--    );
+    PORT (
+     clk_in      :IN   std_logic;
+     rst         :IN   std_logic;
+     start       :IN   std_logic;
+     din         :IN   std_logic_vector(169 DOWNTO 0);
+     dout_sr_p   :IN   std_logic;
+     dout_sr_n   :IN   std_logic;
+     div         :IN   std_logic_vector(15 DOWNTO 0);
+     clk         :OUT  std_logic;
+     clk_sr_p    :OUT  std_logic;
+     clk_sr_n    :OUT  std_logic;
+     din_sr_p    :OUT  std_logic;
+     din_sr_n    :OUT  std_logic;
+     load_sr_p   :OUT  std_logic;
+     load_sr_n   :OUT  std_logic;
+     dout        :OUT  std_logic_vector(169 DOWNTO 0)
+    );
+  END COMPONENT;
+  ---------------------------------------------> TOP_SR
+  ---------------------------------------------< PULSE_SYNCHRONISE
+  COMPONENT pulse_synchronise
+    PORT (
+      pulse_in     :IN  std_logic;
+      clk_in       :IN  std_logic;
+      clk_out      :IN  std_logic;
+      rst          :IN  std_logic;
+      pulse_out    :OUT std_logic
+     );
+  END COMPONENT;
+  ---------------------------------------------> PULSE_SYNCHRONISE
   ---------------------------------------------< debug : ILA and VIO (`Chipscope')
   COMPONENT dbg_ila
     PORT (
@@ -214,6 +258,11 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL control_mem_addr                  : std_logic_vector(31 DOWNTO 0);
   SIGNAL control_mem_din                   : std_logic_vector(31 DOWNTO 0);
   --
+  SIGNAL control_data_fifo_q               : std_logic_vector(31 DOWNTO 0);
+  SIGNAL control_data_fifo_empty           : std_logic;
+  SIGNAL control_data_fifo_rdreq           : std_logic;
+  SIGNAL control_data_fifo_rdclk           : std_logic;
+  --
   SIGNAL usr_data_output                   : std_logic_vector (7 DOWNTO 0);
   ---------------------------------------------< gig_eth
   SIGNAL gig_eth_mac_addr                  : std_logic_vector(47 DOWNTO 0);
@@ -237,6 +286,17 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL gig_eth_rx_fifo_empty             : std_logic;
   SIGNAL gig_eth_status                    : std_logic_vector(31 DOWNTO 0);
   ---------------------------------------------> gig_eth
+  ---------------------------------------------< TOP_SR
+  SIGNAL div                               : std_logic_vector (15 DOWNTO 0);
+  SIGNAL din                               : std_logic_vector (169 DOWNTO 0);
+  SIGNAL dout                              : std_logic_vector( 169 DOWNTO 0);
+  SIGNAL clk_sr_contr                      : std_logic;
+  ---------------------------------------------> TOP_SR
+  ---------------------------------------------< PULSE_SYNCHRONISE
+  SIGNAL pulse_in                          : std_logic;
+  SIGNAL clk_out                           : std_logic;
+  SIGNAL pulse_out                         : std_logic;
+  ---------------------------------------------> PULSE_SYNCHRONISE
   ---------------------------------------------< debug
   SIGNAL dbg_ila_probe0                    : std_logic_vector (63 DOWNTO 0);
   SIGNAL dbg_ila_probe1                    : std_logic_vector (79 DOWNTO 0);
@@ -284,7 +344,6 @@ BEGIN
       IB => USER_CLK_N
     );
   ---------------------------------------------> Clock and reset
-
   ---------------------------------------------< control_interface
   control_clk <= clk_100MHz;
   control_interface_inst : control_interface
@@ -310,10 +369,10 @@ BEGIN
       MEM_DIN         => control_mem_din,
       MEM_DOUT        => (OTHERS => '0'),
       -- Data FIFO interface, FWFT
-      DATA_FIFO_Q     => (OTHERS => '0'),
-      DATA_FIFO_EMPTY => '1',
-      DATA_FIFO_RDREQ => OPEN,
-      DATA_FIFO_RDCLK => OPEN
+      DATA_FIFO_Q     => control_data_fifo_q,
+      DATA_FIFO_EMPTY => control_data_fifo_empty,
+      DATA_FIFO_RDREQ => control_data_fifo_rdreq,
+      DATA_FIFO_RDCLK => control_data_fifo_rdclk
     );
   ---------------------------------------------> control_interface
   ---------------------------------------------< gig_eth
@@ -408,7 +467,6 @@ BEGIN
   END PROCESS;
 
   usr_data_output(7 DOWNTO 4) <= gig_eth_status(16) & gig_eth_status(7) & gig_eth_status(3 DOWNTO 2);
-  -- usr_data_output <= gig_eth_status(15 DOWNTO 8);
 
   led_obufs : FOR i IN 0 TO 7 GENERATE
     led_obuf : OBUF
@@ -417,5 +475,41 @@ BEGIN
         O => LED8Bit(i)
       );
   END GENERATE led_obufs;
+
+  ---------------------------------------------< TOP_SR
+  div                      <= config_reg(185 DOWNTO 170);
+  din                      <= config_reg(169 DOWNTO 0);
+  status_reg(169 DOWNTO 0) <= dout(169 DOWNTO 0);
+  Top_SR_0 : Top_SR
+    PORT MAP (
+      clk_in    => clk_100MHz,
+      rst       => reset,
+      start     => pulse_out,
+      din       => din,
+      dout_sr_p => FMC_HPC_LA_P(20),
+      dout_sr_n => FMC_HPC_LA_N(20),
+      div       => div,
+      clk       => clk_sr_contr,
+      clk_sr_p  => FMC_HPC_LA_P(18),
+      clk_sr_n  => FMC_HPC_LA_N(18),
+      din_sr_p  => FMC_HPC_LA_P(17),
+      din_sr_n  => FMC_HPC_LA_N(17),
+      load_sr_p => FMC_HPC_LA_P(19),
+      load_sr_n => FMC_HPC_LA_N(19),
+      dout      => dout
+    );
+  ---------------------------------------------> TOP_SR
+  ---------------------------------------------< PULSE_SYNCHRONISE
+  pulse_in <= pulse_reg(0);
+  pulse_synchronise_0 : pulse_synchronise
+    PORT MAP (
+      pulse_in  => pulse_in,
+      clk_in    => control_clk,
+      clk_out   => clk_sr_contr,
+      rst       => reset,
+      pulse_out => pulse_out
+    );
+  ---------------------------------------------> PULSE_SYNCHRONISE
+
 
 END Behavioral;
