@@ -160,25 +160,29 @@ ARCHITECTURE Behavioral OF top IS
   END COMPONENT;
   ---------------------------------------------< TOP_SR
   COMPONENT Top_SR IS
---    GENERIC (
---     WIDTH : positive = : 170 ;
---     COUNT_WIDTH : positive = : 16
---    );
+    GENERIC (
+     WIDTH : positive :=  170 ;
+     CNT_WIDTH : positive :=  8 ;
+     DIV_WIDTH : positive := 6 ;
+     SHIFT_DIRECTION : positive :=1
+     );
+
     PORT (
      clk_in      :IN   std_logic;
      rst         :IN   std_logic;
      start       :IN   std_logic;
      din         :IN   std_logic_vector(169 DOWNTO 0);
-     dout_sr_p   :IN   std_logic;
-     dout_sr_n   :IN   std_logic;
+     data_in_p   :IN   std_logic;
+     data_in_n   :IN   std_logic;
      div         :IN   std_logic_vector(5 DOWNTO 0);
      clk         :OUT  std_logic;
      clk_sr_p    :OUT  std_logic;
      clk_sr_n    :OUT  std_logic;
-     din_sr_p    :OUT  std_logic;
-     din_sr_n    :OUT  std_logic;
+     data_out_p    :OUT  std_logic;
+     data_out_n    :OUT  std_logic;
      load_sr_p   :OUT  std_logic;
      load_sr_n   :OUT  std_logic;
+     valid       :OUT  std_logic;
      dout        :OUT  std_logic_vector(169 DOWNTO 0)
     );
   END COMPONENT;
@@ -290,6 +294,7 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL div                               : std_logic_vector (5 DOWNTO 0);
   SIGNAL din                               : std_logic_vector (169 DOWNTO 0);
   SIGNAL dout                              : std_logic_vector( 169 DOWNTO 0);
+  SIGNAL valid                             : std_logic;
   SIGNAL clk_sr_contr                      : std_logic;
   ---------------------------------------------> TOP_SR
   ---------------------------------------------< PULSE_SYNCHRONISE
@@ -480,22 +485,24 @@ BEGIN
   div                      <= config_reg(175 DOWNTO 170);
   din                      <= config_reg(169 DOWNTO 0);
   status_reg(169 DOWNTO 0) <= dout(169 DOWNTO 0);
+  status_reg(170)          <= valid;   
   Top_SR_0 : Top_SR
     PORT MAP (
       clk_in    => clk_100MHz,
       rst       => reset,
       start     => pulse_out,
       din       => din,
-      dout_sr_p => FMC_HPC_LA_P(20),
-      dout_sr_n => FMC_HPC_LA_N(20),
+      data_in_p => FMC_HPC_LA_P(20),
+      data_in_n => FMC_HPC_LA_N(20),
       div       => div,
       clk       => clk_sr_contr,
       clk_sr_p  => FMC_HPC_LA_P(18),
       clk_sr_n  => FMC_HPC_LA_N(18),
-      din_sr_p  => FMC_HPC_LA_P(17),
-      din_sr_n  => FMC_HPC_LA_N(17),
+      data_out_p  => FMC_HPC_LA_P(17),
+      data_out_n  => FMC_HPC_LA_N(17),
       load_sr_p => FMC_HPC_LA_P(19),
       load_sr_n => FMC_HPC_LA_N(19),
+      valid     => valid,
       dout      => dout
     );
   ---------------------------------------------> TOP_SR
