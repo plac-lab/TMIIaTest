@@ -17,6 +17,7 @@ import time
 # @param[in] data_to_send 170-bit value to be sent to the external SR.
 # @param[in] clk_div Clock frequency division factor: (/2**clk_div).  6-bit wide.
 # @return Value stored in the external SR that is read back.
+# @return valid signal shows that the value stored in external SR is read back.
 def shift_register_rw(s, data_to_send, clk_div):
     div_reg = (clk_div & 0x3f) << 170
     data_reg = data_to_send & 0x3ffffffffffffffffffffffffffffffffffffffff
@@ -41,11 +42,15 @@ def shift_register_rw(s, data_to_send, clk_div):
     s.sendall(cmdstr)
     retw = s.recv(4*11)
     print [hex(ord(w)) for w in retw]
-    ret = 0
+    ret_all = 0
     for i in xrange(11):
-        ret = ret | int(ord(retw[i*4+2])) << ((10-i) * 16 + 8) | int(ord(retw[i*4+3])) << ((10-i) * 16)
+        ret_all = ret | int(ord(retw[i*4+2])) << ((10-i) * 16 + 8) | int(ord(retw[i*4+3])) << ((10-i) * 16)
+    ret = ret_all & 0x3ffffffffffffffffffffffffffffffffffffffffff
+    valid = (ret_all & (1 <<170)) >> 170
     print "%x" % ret
+    print valid
     return ret
+    return valid
 
 if __name__ == "__main__":
     host = '192.168.2.3'
