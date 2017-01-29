@@ -10,7 +10,9 @@
 module Top_SR #(parameter WIDTH=170, //% @param Width of data input and output
                 parameter CNT_WIDTH=8, //% @param WIDTH must be no greater than 2**CNT_WIDTH 
                 parameter DIV_WIDTH=6,  //% @param width of division factor.
-                parameter SHIFT_DIRECTION=1 //% @param 1: MSB out first, 0: LSB out first                 
+                parameter SHIFT_DIRECTION=1, //% @param 1: MSB out first, 0: LSB out first  
+                parameter READ_TRIG_SRC=0, //% @param 0:start act as trig, 1: load_sr act as trig   
+                parameter READ_DELAY=0 //% @param state machine delay period             
    ) (
     input clk_in, //% clock input is synchronised with input signals control clock.
     input rst, //% module reset 
@@ -34,6 +36,7 @@ wire data_in;
 wire data_out;
 wire clk_sr;
 wire load_sr;
+wire trig;
 
 IBUFDS #(.DIFF_TERM("TRUE"))
   IBUFDS_inst (
@@ -77,13 +80,15 @@ SR_Control #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .SHIFT_DIRECTION(SHIFT_D
          .load_sr(load_sr),
          .clk_sr(clk_sr)
         );
+
+assign trig= (READ_TRIG_SRC==1)? load_sr: start;
         
-Receive_Data #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .SHIFT_DIRECTION(SHIFT_DIRECTION))
+Receive_Data #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .SHIFT_DIRECTION(SHIFT_DIRECTION), .READ_DELAY(READ_DELAY))
      receive_data_0(
         .data_in(data_in),
         .clk(clk),
         .rst(rst),
-        .start(start),
+        .start(trig),
         .valid(valid),
         .dout(dout)
         );                         
