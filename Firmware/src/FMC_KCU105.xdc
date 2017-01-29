@@ -14,3 +14,7 @@ set_property PACKAGE_PIN A24 [get_ports "FMC_HPC_LA_N[20]"]
 set_property IOSTANDARD LVDS [get_ports "FMC_HPC_LA_N[20]"]
 set_property PACKAGE_PIN B24 [get_ports "FMC_HPC_LA_P[20]"]
 set_property IOSTANDARD LVDS [get_ports "FMC_HPC_LA_P[20]"]
+
+# Local Variables:
+# mode: tcl
+# End:

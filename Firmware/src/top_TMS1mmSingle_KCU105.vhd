@@ -200,6 +200,28 @@ ARCHITECTURE Behavioral OF top IS
      );
   END COMPONENT;
   ---------------------------------------------> PULSE_SYNCHRONISE
+  ---------------------------------------------< shiftreg driver for DAC8568
+  COMPONENT fifo2shiftreg
+    GENERIC (
+      WIDTH   : positive := 32;         -- parallel data width
+      CLK_DIV : natural  := 2           -- SCLK freq is CLK / 2**(CLK_DIV)
+    );
+    PORT (
+      CLK      : IN  std_logic;         -- clock
+      RESET    : IN  std_logic;         -- reset
+      -- input data interface
+      WR_CLK   : IN  std_logic;         -- FIFO write clock
+      DIN      : IN  std_logic_vector(15 DOWNTO 0);
+      WR_EN    : IN  std_logic;
+      WR_PULSE : IN  std_logic;  -- one pulse writes one word, regardless of pulse duration
+      FULL     : OUT std_logic;
+      -- output
+      SCLK     : OUT std_logic;
+      DOUT     : OUT std_logic;
+      SYNCn    : OUT std_logic
+    );
+  END COMPONENT;
+  ---------------------------------------------> shiftreg driver for DAC8568
   ---------------------------------------------< debug : ILA and VIO (`Chipscope')
   COMPONENT dbg_ila
     PORT (
@@ -304,6 +326,11 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL clk_out                           : std_logic;
   SIGNAL pulse_out                         : std_logic;
   ---------------------------------------------> PULSE_SYNCHRONISE
+  ---------------------------------------------< shiftreg driver for DAC8568
+  SIGNAL spi_sclk                          : std_logic;
+  SIGNAL spi_data                          : std_logic;
+  SIGNAL spi_sync_n                        : std_logic;
+  ---------------------------------------------> shiftreg driver for DAC8568
   ---------------------------------------------< debug
   SIGNAL dbg_ila_probe0                    : std_logic_vector (63 DOWNTO 0);
   SIGNAL dbg_ila_probe1                    : std_logic_vector (79 DOWNTO 0);
@@ -519,6 +546,53 @@ BEGIN
       pulse_out => pulse_out
     );
   ---------------------------------------------> PULSE_SYNCHRONISE
-
+  ---------------------------------------------< shiftreg driver for DAC8568
+  dac8568_inst : fifo2shiftreg
+    GENERIC MAP (
+      WIDTH   => 32,                    -- parallel data width
+      CLK_DIV => 2                      -- SCLK freq is CLK / 2**(CLK_DIV+1)
+    )
+    PORT MAP (
+      CLK      => control_clk,          -- clock
+      RESET    => reset,                -- reset
+      -- input data interface
+      WR_CLK   => control_clk,          -- FIFO write clock
+      DIN      => config_reg(15 DOWNTO 0),
+      WR_EN    => '0',
+      WR_PULSE => pulse_reg(1),  -- one pulse writes one word, regardless of pulse duration
+      FULL     => OPEN,
+      -- output
+      SCLK     => spi_sclk,
+      DOUT     => spi_data,
+      SYNCn    => spi_sync_n
+    );
+  spi_sclk_obufds_inst : OBUFDS
+    GENERIC MAP (
+      IOSTANDARD => "LVDS"
+    )
+    PORT MAP (
+      O  => FMC_HPC_LA_P(13),  -- Diff_p output (connect directly to top-level port)
+      OB => FMC_HPC_LA_N(13),  -- Diff_n output (connect directly to top-level port)
+      I  => spi_sclk
+    );
+  spi_data_obufds_inst : OBUFDS
+    GENERIC MAP (
+      IOSTANDARD => "LVDS"
+    )
+    PORT MAP (
+      O  => FMC_HPC_LA_P(14),  -- Diff_p output (connect directly to top-level port)
+      OB => FMC_HPC_LA_N(14),  -- Diff_n output (connect directly to top-level port)
+      I  => spi_data
+    );
+  spi_sync_n_obufds_inst : OBUFDS
+    GENERIC MAP (
+      IOSTANDARD => "LVDS"
+    )
+    PORT MAP (
+      O  => FMC_HPC_LA_P(12),  -- Diff_p output (connect directly to top-level port)
+      OB => FMC_HPC_LA_N(12),  -- Diff_n output (connect directly to top-level port)
+      I  => spi_sync_n
+    );
+  ---------------------------------------------> shiftreg driver for DAC8568
 
 END Behavioral;
