@@ -134,26 +134,45 @@ def shift_register_rw(s, data_to_send, clk_div):
     return ret
 
 if __name__ == "__main__":
+
     host = '192.168.2.3'
     port = 1024
     s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     s.connect((host,port))
 
+    cmd = Cmd()
+    dac8568 = DAC8568(cmd)
+    s.sendall(dac8568.turn_on_2V5_ref())
+    s.sendall(dac8568.set_voltage(6, 1.2))
+
+    x2gain = 1
+    bufferTest = True
     tms1mmReg = TMS1mmReg()
-    for i in xrange(4):
-        tms1mmReg.set_power_down(i, 0)
-    tms1mmReg.set_k(0, 0) # 0 - K1 is open, disconnect CSA output
-    tms1mmReg.set_k(1, 0) # 0 - K1 is open, disconnect CSA output
-    tms1mmReg.set_k(2, 0) # 1 - K2 is closed, allow BufferX2_testIN to inject signal
-    tms1mmReg.set_k(3, 0)
-    tms1mmReg.set_k(5, 0)
-    tms1mmReg.set_k(6, 0) # 1 - K7 is closed, BufferX2 output to AOUT_BufferX2
-    tms1mmReg.set_k(7, 1) # 1 - K8 is closed
+    tms1mmReg.set_power_down(0, 0)
+    tms1mmReg.set_power_down(3, 0)
+
+    if bufferTest:
+        tms1mmReg.set_k(0, 0) # 0 - K1 is open, disconnect CSA output
+        tms1mmReg.set_k(1, 1) # 1 - K2 is closed, allow BufferX2_testIN to inject signal
+        tms1mmReg.set_k(4, 0) # 0 - K5 is open, disconnect SDM loads
+        tms1mmReg.set_k(6, 1) # 1 - K7 is closed, BufferX2 output to AOUT_BufferX2
+    if x2gain == 2:
+        tms1mmReg.set_k(2, 1) # 1 - K3 is closed, K4 is open, setting gain to X2
+        tms1mmReg.set_k(3, 0)
+    else:
+        tms1mmReg.set_k(2, 0)
+        tms1mmReg.set_k(3, 1)
+
+    tms1mmReg.set_k(6, 1) # 1 - K7 is closed, BufferX2 output to AOUT_BufferX2
+    tms1mmReg.set_k(7, 1) # 1 - K8 is closed, connect CSA out to AOUT1_CSA
+#    tms1mmReg.set_dac(0, 0x8000)
+#    tms1mmReg.set_dac(1, 0x4000)
+#    tms1mmReg.set_dac(5, 0x8000)
 
     data_to_send = tms1mmReg.get_config_vector()
-    print "0x%0x" % data_to_send
+    print "0x%0x" % (data_to_send >> 1)
 
     div=7
-    shift_register_rw(s, data_to_send, div)
+    shift_register_rw(s, (data_to_send >> 1), div)
 
     s.close()

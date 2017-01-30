@@ -591,7 +591,7 @@ BEGIN
     PORT MAP (
       O  => FMC_HPC_LA_P(12),  -- Diff_p output (connect directly to top-level port)
       OB => FMC_HPC_LA_N(12),  -- Diff_n output (connect directly to top-level port)
-      I  => spi_sync_n
+      I  => NOT spi_sync_n
     );
   ---------------------------------------------> shiftreg driver for DAC8568
 
