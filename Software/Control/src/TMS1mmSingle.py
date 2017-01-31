@@ -114,7 +114,7 @@ def shift_register_rw(s, data_to_send, clk_div):
 
     s.sendall(cmdstr)
 
-    time.sleep(1)
+    time.sleep(0.5)
 
     # read back
     cmdstr = ""
@@ -165,14 +165,14 @@ if __name__ == "__main__":
 
     tms1mmReg.set_k(6, 1) # 1 - K7 is closed, BufferX2 output to AOUT_BufferX2
     tms1mmReg.set_k(7, 1) # 1 - K8 is closed, connect CSA out to AOUT1_CSA
-#    tms1mmReg.set_dac(0, 0x8000)
-#    tms1mmReg.set_dac(1, 0x4000)
-#    tms1mmReg.set_dac(5, 0x8000)
+    tms1mmReg.set_dac(0, 0x0)
+    tms1mmReg.set_dac(1, 0xffff)
+    tms1mmReg.set_dac(2, 0x8000)
 
     data_to_send = tms1mmReg.get_config_vector()
-    print "0x%0x" % (data_to_send >> 1)
+    print "0x%0x" % (data_to_send>>1)
 
     div=7
-    shift_register_rw(s, (data_to_send >> 1), div)
+    shift_register_rw(s, (data_to_send>>1), div)
 
     s.close()
