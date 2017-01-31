@@ -40,11 +40,11 @@ wire [WIDTH-1:0] dout;
 wire clk;
 wire valid;
 
-Top_SR #(.WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .DIV_WIDTH(DIV_WIDTH),.SHIFT_DIRECTION(SHIFT_DIRECTION),.READ_TRIG_SRC(READ_TRIG_SRC),.READ_DELAY(READ_DELAY))
+top_new #(.WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .DIV_WIDTH(DIV_WIDTH),.SHIFT_DIRECTION(SHIFT_DIRECTION),.READ_TRIG_SRC(READ_TRIG_SRC),.READ_DELAY(READ_DELAY))
   DUT4(
     .clk_in(clk_in),
     .rst(rst),
-    .start(start),
+    .pulse_in(start),
     .din(din),
     .div(div),
     .data_in_p(data_in_p),
@@ -81,13 +81,15 @@ din={1'b1,169'b1011};
 div=6'b1;
 start=0;
 #675 start=1;
-#100 start=0;
+#50 start=0;
+#19500 start=1;
+#50 start=0;
 end
 
 initial begin
 data_in_p=0;
 data_in_n=1;
-#775
+#1125
 data_in_p=1;
 data_in_n=0;  
 #200 

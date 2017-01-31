@@ -17,7 +17,8 @@ module SR_Control #(
     input start, //% start signal
     output reg data_out, //% data sent to shift register
     output reg load_sr, //% load signal sent to shift register
-    output clk_sr //% clock signal sent to shift register
+    output count //% count signal sent to Clock_SR.v.
+   // output clk_sr //% clock signal sent to shift register
     );
     
 reg [4:0] current_state_out, next_state_out;
@@ -28,7 +29,7 @@ parameter s2=5'b00100;
 parameter s3=5'b01000;
 parameter s4=5'b10000;
 
-assign clk_sr=~rst&&~clk||~rst&&clk&&load_sr;    
+//assign clk_sr=~rst&&~clk||~rst&&clk&&load_sr;    
 
 //state machine 1, used to send signals to SR
 always@(posedge clk or posedge rst)
@@ -57,8 +58,8 @@ always@(current_state_out or rst or start or count)
         if(start) begin next_state_out=s1; end
         else begin next_state_out=s0; end
        end
-     s1: begin next_state_out=s2; end
-     s2:
+     //s1: begin next_state_out=s2; end
+     s1,s2:
        begin
         if(count==DATA_WIDTH) 
          begin
@@ -99,13 +100,13 @@ begin
       data_out<=1'b0;
       load_sr<=1'b0;
       end
-    s1:
-      begin
-      count<=0;
-      data_out<=1'b0;
-      load_sr<=1'b0;
-      end
-    s2:
+//    s1:
+//      begin
+//      count<=0;
+//      data_out<=1'b0;
+//      load_sr<=1'b0;
+//      end
+    s1,s2:
       begin
        count<=count+1'b1;
        if(SHIFT_DIRECTION)

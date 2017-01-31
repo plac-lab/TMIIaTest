@@ -20,7 +20,7 @@ module Clock_Div #(
 reg [COUNT_WIDTH-1:0] count;
 
 
-always@(posedge clk_in)
+always@(posedge clk_in or posedge rst)
 begin
   if(rst)
     begin

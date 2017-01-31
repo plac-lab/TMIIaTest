@@ -17,7 +17,7 @@ module pulse_synchronise(
  reg set_reg1,set_reg2,set_reg3;
  reg en,en_reg1,en_reg2,en_reg3;
  
- always@(posedge clk_in)
+ always@(posedge clk_in or posedge rst)
   begin
    if(rst)
     begin
@@ -45,7 +45,7 @@ module pulse_synchronise(
     end
   end
  
- always@(posedge clk_out)
+ always@(posedge clk_out or posedge rst)
   begin
    if(rst)
     begin

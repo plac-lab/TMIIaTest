@@ -161,13 +161,13 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------< TOP_SR
   COMPONENT Top_SR IS
     GENERIC (
-     WIDTH : positive :=  130 ;
-     CNT_WIDTH : positive :=  8 ;
-     DIV_WIDTH : positive := 6 ;
-     SHIFT_DIRECTION : positive := 1 ;
-     READ_TRIG_SRC : positive := 1 ;
-     READ_DELAY : natural := 0
-     );
+   WIDTH : positive :=  130 ;
+   CNT_WIDTH : positive :=  8 ;
+   DIV_WIDTH : positive := 6 ;
+   SHIFT_DIRECTION : positive := 1 ;
+   READ_TRIG_SRC : natural := 0 ;
+   READ_DELAY : natural := 0
+   );
 
     PORT (
      clk_in      :IN   std_logic;
@@ -516,7 +516,15 @@ BEGIN
   status_reg(129 DOWNTO 0) <= dout(129 DOWNTO 0);
   status_reg(130)          <= valid;   
   Top_SR_0 : Top_SR
-    PORT MAP (
+   GENERIC MAP (
+   WIDTH =>  130 ,
+   CNT_WIDTH =>  8 ,
+   DIV_WIDTH => 6 ,
+   SHIFT_DIRECTION => 1 ,
+   READ_TRIG_SRC => 0 ,
+   READ_DELAY => 0
+   )
+   PORT MAP (
       clk_in    => clk_100MHz,
       rst       => reset,
       start     => pulse_out,

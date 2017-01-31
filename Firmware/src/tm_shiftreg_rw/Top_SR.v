@@ -37,6 +37,7 @@ wire data_out;
 wire clk_sr;
 wire load_sr;
 wire trig;
+wire [CNT_WIDTH-1:0] count;
 
 IBUFDS #(.DIFF_TERM("TRUE"))
   IBUFDS_inst (
@@ -58,6 +59,7 @@ OBUFDS OBUFDS_inst2 (
   );
 OBUFDS OBUFDS_inst3 (
   .I(load_sr),
+ // .I(start),
   .O(load_sr_p),
   .OB(load_sr_n)
   );
@@ -78,9 +80,18 @@ SR_Control #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .SHIFT_DIRECTION(SHIFT_D
          .start(start),
          .data_out(data_out),
          .load_sr(load_sr),
-         .clk_sr(clk_sr)
+         .count(count)
+         //.clk_sr(clk_sr)
         );
 
+Clock_SR #(.WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH))        
+   clock_sr_0(
+        .clk(clk),
+        .rst(rst),
+        .count(count),
+        .start(start),
+        .clk_sr(clk_sr)
+   );
 assign trig= (READ_TRIG_SRC==1)? load_sr: start;
         
 Receive_Data #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .SHIFT_DIRECTION(SHIFT_DIRECTION), .READ_DELAY(READ_DELAY))
