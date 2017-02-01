@@ -12,13 +12,13 @@
 module Receive_Data #(parameter DATA_WIDTH=170,  //% @param width of data
                       parameter CNT_WIDTH=8, //% @param width of internal counter.
                       parameter SHIFT_DIRECTION=1, //% @param 1: first bit in is MSB, 0: first bit in is LSB
-                      parameter READ_DELAY=0 //% @param state machine delay period
+                      parameter READ_DELAY=0 //% @param state machine delay cycle.
    ) (
-    input data_in, //% original data stored in shift register
+    input data_in, //% input from data stored in shift register in the chip.
     input clk, //% control clock
     input rst, //% module reset
     input start, //% start signal
-    output reg [DATA_WIDTH-1:0] dout, //% origianl 170-bit data stored in shift register 
+    output reg [DATA_WIDTH-1:0] dout, //% parallized captured data (170-bit) from shift register 
     output reg valid //% valid is asserted when dout_temp is sent to dout 
     );
 reg [2:0] current_state_in, next_state_in;

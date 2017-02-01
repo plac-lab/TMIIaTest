@@ -11,14 +11,13 @@ module SR_Control #(
     parameter CNT_WIDTH=8, //% @param width of internal counter
     parameter SHIFT_DIRECTION=1 //% @param 1: MSB out first, 0: LSB out first
    ) (
-    input [DATA_WIDTH-1:0] din, //% 170-bit data input
+    input [DATA_WIDTH-1:0] din, //% 170-bit data input to be sent out.
     input clk, //% control clock
     input rst, //% module reset
     input start, //% start signal
     output reg data_out, //% data sent to shift register
     output reg load_sr, //% load signal sent to shift register
-    output count //% count signal sent to Clock_SR.v.
-   // output clk_sr //% clock signal sent to shift register
+    output reg [CNT_WIDTH-1:0] count_delay //% count signal sent to Clock_SR.v.
     );
     
 reg [4:0] current_state_out, next_state_out;
@@ -88,6 +87,7 @@ begin
  if(rst)
   begin
   count<=0;
+  count_delay<=0;
   data_out<=1'b0;
   load_sr<=1'b0;
   end
@@ -97,6 +97,7 @@ begin
     s0:
       begin
       count<=0;
+      count_delay<=0;
       data_out<=1'b0;
       load_sr<=1'b0;
       end
@@ -109,6 +110,7 @@ begin
     s1,s2:
       begin
        count<=count+1'b1;
+       count_delay<=count_delay+1'b1;
        if(SHIFT_DIRECTION)
         begin
         data_out<=din[DATA_WIDTH-1-count];
@@ -122,18 +124,21 @@ begin
     s3:
       begin
       count<=0;
+      count_delay<=count_delay+1'b1;
       data_out<=1'b0;
       load_sr<=1'b1;
       end
     s4:
       begin
       count<=0;
+      count_delay<=0;
       data_out<=1'b0;
       load_sr<=1'b0;
       end
     default:
       begin
       count<=0;
+      count_delay<=0;
       data_out<=1'b0;
       load_sr<=1'b0;
       end

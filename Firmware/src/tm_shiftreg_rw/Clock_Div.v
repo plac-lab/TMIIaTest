@@ -9,29 +9,30 @@
 
 module Clock_Div #(
     parameter DIV_WIDTH=6,  //% @param width of division factor
-    parameter COUNT_WIDTH=64 //% @param Width of internal counter.
+    parameter COUNT_WIDTH=64 //% @param Width of internal counter, it must be greater than 2**DIV_WIDTH.
   )(
     input clk_in, //% reference clock input
     input rst,    //% module reset
     input [DIV_WIDTH-1:0] div, //% division factor 2**div
-    output clk_out               //% output of divided clock
+    output reg [COUNT_WIDTH-1:0] counter, //% internal counter.
+    output clk_out  //% output of divided clock
   );
 
-reg [COUNT_WIDTH-1:0] count;
+//reg [COUNT_WIDTH-1:0] count;
 
 
 always@(posedge clk_in or posedge rst)
 begin
   if(rst)
     begin
-      count <= 0;
+      counter <= 0;
     end
   else
     begin
-      count <= count+1;
+      counter <= counter+1;
     end
 end
 
-assign clk_out = (div==0) ? clk_in : count[div-1];  
+assign clk_out = (div==0) ? clk_in : counter[div-1];  
 
 endmodule
