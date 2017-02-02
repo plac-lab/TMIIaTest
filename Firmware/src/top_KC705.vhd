@@ -739,7 +739,7 @@ BEGIN
   status_reg(170)  <= valid;
   Top_SR_0 : Top_SR
      GENERIC MAP (
-     WIDTH =>  130 ,
+     WIDTH =>  170 ,
      CNT_WIDTH =>  8 ,
      DIV_WIDTH => 6 ,
      COUNT_WIDTH => 64 ,
