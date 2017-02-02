@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 ## @package TMS1mmSingle
 # Control module for the Topmetal-S 1mm Electrode single-chip test.
@@ -122,16 +123,21 @@ def shift_register_rw(s, data_to_send, clk_div):
         cmdstr += cmd.read_status(8-i)
     s.sendall(cmdstr)
     retw = s.recv(4*9)
-    print [hex(ord(w)) for w in retw]
+#    print [hex(ord(w)) for w in retw]
     ret_all = 0
     for i in xrange(9):
         ret_all = ret_all | ( int(ord(retw[i*4+2])) << ((8-i) * 16 + 8) |
                               int(ord(retw[i*4+3])) << ((8-i) * 16))
     ret = ret_all & 0x3ffffffffffffffffffffffffffffffff
     valid = (ret_all & (1 << 130)) >> 130
-    print "0x%0x" % ret
-    print valid
+    print "Return: 0x%0x, valid: %d" % (ret, valid)
     return ret
+
+def dac_volt2code(v):
+    c = int((v - 0.0349427) / 4.35861E-5)
+    if c < 0:     c = 0
+    if c > 65535: c = 65535
+    return c
 
 if __name__ == "__main__":
 
@@ -145,7 +151,7 @@ if __name__ == "__main__":
     s.sendall(dac8568.turn_on_2V5_ref())
     s.sendall(dac8568.set_voltage(6, 1.2))
 
-    x2gain = 1
+    x2gain = 2
     bufferTest = True
     tms1mmReg = TMS1mmReg()
     tms1mmReg.set_power_down(0, 0)
@@ -165,14 +171,18 @@ if __name__ == "__main__":
 
     tms1mmReg.set_k(6, 1) # 1 - K7 is closed, BufferX2 output to AOUT_BufferX2
     tms1mmReg.set_k(7, 1) # 1 - K8 is closed, connect CSA out to AOUT1_CSA
-    tms1mmReg.set_dac(0, 0x0)
-    tms1mmReg.set_dac(1, 0xffff)
-    tms1mmReg.set_dac(2, 0x8000)
+    tms1mmReg.set_dac(0, dac_volt2code(1.38)) # VBIASN R45
+    tms1mmReg.set_dac(1, dac_volt2code(1.55)) # VBIASP R47
+    tms1mmReg.set_dac(2, dac_volt2code(1.45)) # VCASN  R29
+    tms1mmReg.set_dac(3, dac_volt2code(1.35)) # VCASP  R27
+    # tms1mmReg.set_dac(4, dac_volt2code(1.58)) # VDIS   R16, use external DAC
+    s.sendall(dac8568.set_voltage(4, 1.58))
+    tms1mmReg.set_dac(5, dac_volt2code(2.68)) # VREF   R14
 
     data_to_send = tms1mmReg.get_config_vector()
-    print "0x%0x" % (data_to_send>>1)
+    print "Sent: 0x%0x" % (data_to_send)
 
     div=7
-    shift_register_rw(s, (data_to_send>>1), div)
+    shift_register_rw(s, (data_to_send), div)
 
     s.close()

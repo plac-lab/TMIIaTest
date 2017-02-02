@@ -72,7 +72,7 @@ class HP34401A:
     def get_data(self):
         self._s.write("FETC?\n")
         ret = self._s.readline()
-        return [float(x) for x in ret[:-3].split(',')]
+        return [float(x) for x in ret[:-2].split(',')]
 
 if __name__ == "__main__":
 
@@ -113,20 +113,21 @@ if __name__ == "__main__":
     tms1mmReg.set_dac(1, 0xffff) # VBIASP
 
     div = 7 # SR clock freq divisor 2**div
-    stepsize = 31 # DAC code step size
+    stepsize = 1 # DAC code step size
+    batches = 128 # total # of points taken is 512 * batches
 
     dfp = open("dacscan.dat", "w")
     dfp.write("# step size %d\n" % stepsize)
 
-    for i in xrange(4):
+    for i in xrange(batches):
         dmm.set_trigger_then_arm()
         for j in xrange(dmm._numMax):
             dacVal = (i*dmm._numMax + j) * stepsize
             print "sample id = %d, dacVal = %d, 0x%04x" % (j, dacVal, dacVal)
             tms1mmReg.set_dac(2, dacVal)
             data_to_send = tms1mmReg.get_config_vector()
-            print "0x%0x" % (data_to_send >> 1)
-            shift_register_rw(sock, (data_to_send >> 1), div)
+            print "Sent to SR: 0x%0x" % (data_to_send)
+            shift_register_rw(sock, (data_to_send), div)
             dmm.measure_one_point()
         dmm.get_points_taken()
         dmmData = dmm.get_data()

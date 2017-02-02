@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 ## @package sr_ctrl
 # This file is used to configure TMIIa  Shift Register module.
@@ -63,4 +64,3 @@ if __name__ == "__main__":
     shift_register_rw(s, data_in, div)
 
     s.close()
-
