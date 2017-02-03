@@ -41,11 +41,12 @@ def shift_register_rw(s, data_to_send, clk_div):
     for i in xrange(11):
         cmdstr += cmd.read_status(10-i)
     s.sendall(cmdstr)
+    time.sleep(1)
     retw = s.recv(4*11)
     print [hex(ord(w)) for w in retw]
     ret_all = 0
     for i in xrange(11):
-        ret_all = ret | int(ord(retw[i*4+2])) << ((10-i) * 16 + 8) | int(ord(retw[i*4+3])) << ((10-i) * 16)
+        ret_all = ret_all | int(ord(retw[i*4+2])) << ((10-i) * 16 + 8) | int(ord(retw[i*4+3])) << ((10-i) * 16)
     ret = ret_all & 0x3ffffffffffffffffffffffffffffffffffffffffff
     valid = (ret_all & (1 <<170)) >> 170
     print "%x" % ret
@@ -60,7 +61,7 @@ if __name__ == "__main__":
     s.connect((host,port))
 
     data_in=123456
-    div=2
+    div=7
     shift_register_rw(s, data_in, div)
 
     s.close()
