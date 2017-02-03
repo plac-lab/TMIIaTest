@@ -71,6 +71,19 @@ class TMS1mmReg:
             ret |= self._regMap['DAC'][i] << (len(self._regMap['DAC'])-1 - i)*16
         return ret
 
+    dac_fit_a = 4.35861E-5
+    dac_fit_b = 0.0349427
+    def dac_volt2code(self, v):
+
+        c = int((v - self.dac_fit_b) / self.dac_fit_a)
+        if c < 0:     c = 0
+        if c > 65535: c = 65535
+        return c
+
+    def dac_code2volt(self, c):
+        v = c * self.dac_fit_a + self.dac_fit_b
+        return v
+
 ## Command generator for controlling DAC8568
 #
 class DAC8568:
@@ -133,12 +146,6 @@ def shift_register_rw(s, data_to_send, clk_div):
     print "Return: 0x%0x, valid: %d" % (ret, valid)
     return ret
 
-def dac_volt2code(v):
-    c = int((v - 0.0349427) / 4.35861E-5)
-    if c < 0:     c = 0
-    if c > 65535: c = 65535
-    return c
-
 if __name__ == "__main__":
 
     host = '192.168.2.3'
@@ -171,13 +178,13 @@ if __name__ == "__main__":
 
     tms1mmReg.set_k(6, 1) # 1 - K7 is closed, BufferX2 output to AOUT_BufferX2
     tms1mmReg.set_k(7, 1) # 1 - K8 is closed, connect CSA out to AOUT1_CSA
-    tms1mmReg.set_dac(0, dac_volt2code(1.38)) # VBIASN R45
-    tms1mmReg.set_dac(1, dac_volt2code(1.55)) # VBIASP R47
-    tms1mmReg.set_dac(2, dac_volt2code(1.45)) # VCASN  R29
-    tms1mmReg.set_dac(3, dac_volt2code(1.35)) # VCASP  R27
+    tms1mmReg.set_dac(0, tms1mmReg.dac_volt2code(1.38)) # VBIASN R45
+    tms1mmReg.set_dac(1, tms1mmReg.dac_volt2code(1.55)) # VBIASP R47
+    tms1mmReg.set_dac(2, tms1mmReg.dac_volt2code(1.45)) # VCASN  R29
+    tms1mmReg.set_dac(3, tms1mmReg.dac_volt2code(1.35)) # VCASP  R27
     # tms1mmReg.set_dac(4, dac_volt2code(1.58)) # VDIS   R16, use external DAC
     s.sendall(dac8568.set_voltage(4, 1.58))
-    tms1mmReg.set_dac(5, dac_volt2code(2.68)) # VREF   R14
+    tms1mmReg.set_dac(5, tms1mmReg.dac_volt2code(2.68)) # VREF   R14
 
     data_to_send = tms1mmReg.get_config_vector()
     print "Sent: 0x%0x" % (data_to_send)
