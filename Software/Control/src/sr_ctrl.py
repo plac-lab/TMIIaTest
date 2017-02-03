@@ -21,7 +21,7 @@ import time
 # @return valid signal shows that the value stored in external SR is read back.
 def shift_register_rw(s, data_to_send, clk_div):
     div_reg = (clk_div & 0x3f) << 170
-    data_reg = data_to_send & 0x3ffffffffffffffffffffffffffffffffffffffff
+    data_reg = data_to_send & 0x3ffffffffffffffffffffffffffffffffffffffffff
 
     cmd = Cmd()
 
