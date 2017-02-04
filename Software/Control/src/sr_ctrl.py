@@ -37,11 +37,11 @@ def shift_register_rw(s, data_to_send, clk_div):
     s.sendall(cmdstr)
 
     # read back
+    time.sleep(1)
     cmdstr = ""
     for i in xrange(11):
         cmdstr += cmd.read_status(10-i)
     s.sendall(cmdstr)
-    time.sleep(1)
     retw = s.recv(4*11)
     print [hex(ord(w)) for w in retw]
     ret_all = 0
