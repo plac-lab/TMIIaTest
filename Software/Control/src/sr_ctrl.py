@@ -60,7 +60,7 @@ if __name__ == "__main__":
     s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     s.connect((host,port))
 
-    data_in=123456
+    data_in=0
     div=7
     shift_register_rw(s, data_in, div)
 

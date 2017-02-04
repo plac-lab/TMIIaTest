@@ -167,26 +167,34 @@ ARCHITECTURE Behavioral OF top IS
    COUNT_WIDTH : positive := 64 ;
    SHIFT_DIRECTION : positive := 1 ;
    READ_TRIG_SRC : natural := 0 ;
-   READ_DELAY : natural := 1
+   READ_DELAY : natural := 1;
+   FIFO_WIDTH : positive := 36 ;
+   VALID_WIDTH : positive := 32 ;
+   NUM_WIDTH : positive := 4
+
    );
 
     PORT (
-     clk_in      :IN   std_logic;
-     rst         :IN   std_logic;
-     start       :IN   std_logic;
-     din         :IN   std_logic_vector(129 DOWNTO 0);
-     data_in_p   :IN   std_logic;
-     data_in_n   :IN   std_logic;
-     div         :IN   std_logic_vector(5 DOWNTO 0);
-     clk         :OUT  std_logic;
-     clk_sr_p    :OUT  std_logic;
-     clk_sr_n    :OUT  std_logic;
-     data_out_p    :OUT  std_logic;
-     data_out_n    :OUT  std_logic;
-     load_sr_p   :OUT  std_logic;
-     load_sr_n   :OUT  std_logic;
-     valid       :OUT  std_logic;
-     dout        :OUT  std_logic_vector(129 DOWNTO 0)
+     clk_in          :IN   std_logic;
+     rst             :IN   std_logic;
+     start           :IN   std_logic;
+     din             :IN   std_logic_vector(129 DOWNTO 0);
+     data_in_p       :IN   std_logic;
+     data_in_n       :IN   std_logic;
+     div             :IN   std_logic_vector(5 DOWNTO 0);
+     clk             :OUT  std_logic;
+     clk_sr_p        :OUT  std_logic;
+     clk_sr_n        :OUT  std_logic;
+     data_out_p      :OUT  std_logic;
+     data_out_n      :OUT  std_logic;
+     load_sr_p       :OUT  std_logic;
+     load_sr_n       :OUT  std_logic;
+--     valid       :OUT  std_logic;
+--     dout        :OUT  std_logic_vector(129 DOWNTO 0)
+     data_fifo_rdreq :IN   std_logic;
+     data_fifo_rdclk :IN   std_logic;
+     data_fifo_q     :OUT  std_logic_vector(31 DOWNTO 0);
+     data_fifo_empty :OUT  std_logic
     );
   END COMPONENT;
   ---------------------------------------------> TOP_SR
@@ -318,8 +326,8 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------< TOP_SR
   SIGNAL div                               : std_logic_vector (5 DOWNTO 0);
   SIGNAL din                               : std_logic_vector (129 DOWNTO 0);
-  SIGNAL dout                              : std_logic_vector( 129 DOWNTO 0);
-  SIGNAL valid                             : std_logic;
+--  SIGNAL dout                              : std_logic_vector( 129 DOWNTO 0);
+--  SIGNAL valid                             : std_logic;
   SIGNAL clk_sr_contr                      : std_logic;
   ---------------------------------------------> TOP_SR
   ---------------------------------------------< PULSE_SYNCHRONISE
@@ -514,8 +522,8 @@ BEGIN
   ---------------------------------------------< TOP_SR
   div                      <= config_reg(135 DOWNTO 130);
   din                      <= config_reg(129 DOWNTO 0);
-  status_reg(129 DOWNTO 0) <= dout(129 DOWNTO 0);
-  status_reg(130)          <= valid;   
+  --status_reg(129 DOWNTO 0) <= dout(129 DOWNTO 0);
+  --status_reg(130)          <= valid;   
   Top_SR_0 : Top_SR
    GENERIC MAP (
    WIDTH =>  130 ,
@@ -524,7 +532,10 @@ BEGIN
    COUNT_WIDTH => 64 ,
    SHIFT_DIRECTION => 1 ,
    READ_TRIG_SRC => 0 ,
-   READ_DELAY => 1
+   READ_DELAY => 1 ,
+   FIFO_WIDTH => 36 ,
+   VALID_WIDTH => 32 ,
+   NUM_WIDTH => 4
    )
    PORT MAP (
       clk_in    => clk_100MHz,
@@ -541,8 +552,12 @@ BEGIN
       data_out_n  => FMC_HPC_LA_N(10),
       load_sr_p => FMC_HPC_LA_P(07),
       load_sr_n => FMC_HPC_LA_N(07),
-      valid     => valid,
-      dout      => dout
+      --valid     => valid,
+      --dout      => dout
+      data_fifo_rdreq => control_data_fifo_rdreq,
+      data_fifo_rdclk => control_data_fifo_rdclk,
+      data_fifo_q => control_data_fifo_q,
+      data_fifo_empty => control_data_fifo_empty
     );
   ---------------------------------------------> TOP_SR
   ---------------------------------------------< PULSE_SYNCHRONISE
