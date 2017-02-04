@@ -158,8 +158,13 @@ if __name__ == "__main__":
     s.sendall(dac8568.turn_on_2V5_ref())
     s.sendall(dac8568.set_voltage(6, 1.2))
 
+    # enable SDM clock
+    s.sendall(cmd.write_register(9, 0x01))
+
     x2gain = 2
     bufferTest = True
+    sdmTest = True
+
     tms1mmReg = TMS1mmReg()
     tms1mmReg.set_power_down(0, 0)
     tms1mmReg.set_power_down(3, 0)
@@ -175,6 +180,11 @@ if __name__ == "__main__":
     else:
         tms1mmReg.set_k(2, 0)
         tms1mmReg.set_k(3, 1)
+    if sdmTest:
+        tms1mmReg.set_k(4, 0)
+        tms1mmReg.set_k(5, 1)
+    else:
+        tms1mmReg.set_k(5, 0)
 
     tms1mmReg.set_k(6, 1) # 1 - K7 is closed, BufferX2 output to AOUT_BufferX2
     tms1mmReg.set_k(7, 1) # 1 - K8 is closed, connect CSA out to AOUT1_CSA

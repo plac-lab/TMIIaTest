@@ -161,32 +161,32 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------< TOP_SR
   COMPONENT Top_SR IS
     GENERIC (
-   WIDTH : positive :=  130 ;
-   CNT_WIDTH : positive :=  8 ;
-   DIV_WIDTH : positive := 6 ;
-   COUNT_WIDTH : positive := 64 ;
-   SHIFT_DIRECTION : positive := 1 ;
-   READ_TRIG_SRC : natural := 0 ;
-   READ_DELAY : natural := 1
-   );
+      WIDTH           : positive := 130;
+      CNT_WIDTH       : positive := 8;
+      DIV_WIDTH       : positive := 6;
+      COUNT_WIDTH     : positive := 64;
+      SHIFT_DIRECTION : positive := 1;
+      READ_TRIG_SRC   : natural  := 0;
+      READ_DELAY      : natural  := 1
+    );
 
     PORT (
-     clk_in      :IN   std_logic;
-     rst         :IN   std_logic;
-     start       :IN   std_logic;
-     din         :IN   std_logic_vector(129 DOWNTO 0);
-     data_in_p   :IN   std_logic;
-     data_in_n   :IN   std_logic;
-     div         :IN   std_logic_vector(5 DOWNTO 0);
-     clk         :OUT  std_logic;
-     clk_sr_p    :OUT  std_logic;
-     clk_sr_n    :OUT  std_logic;
-     data_out_p    :OUT  std_logic;
-     data_out_n    :OUT  std_logic;
-     load_sr_p   :OUT  std_logic;
-     load_sr_n   :OUT  std_logic;
-     valid       :OUT  std_logic;
-     dout        :OUT  std_logic_vector(129 DOWNTO 0)
+      clk_in     : IN  std_logic;
+      rst        : IN  std_logic;
+      start      : IN  std_logic;
+      din        : IN  std_logic_vector(129 DOWNTO 0);
+      data_in_p  : IN  std_logic;
+      data_in_n  : IN  std_logic;
+      div        : IN  std_logic_vector(5 DOWNTO 0);
+      clk        : OUT std_logic;
+      clk_sr_p   : OUT std_logic;
+      clk_sr_n   : OUT std_logic;
+      data_out_p : OUT std_logic;
+      data_out_n : OUT std_logic;
+      load_sr_p  : OUT std_logic;
+      load_sr_n  : OUT std_logic;
+      valid      : OUT std_logic;
+      dout       : OUT std_logic_vector(129 DOWNTO 0)
     );
   END COMPONENT;
   ---------------------------------------------> TOP_SR
@@ -332,6 +332,12 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL spi_data                          : std_logic;
   SIGNAL spi_sync_n                        : std_logic;
   ---------------------------------------------> shiftreg driver for DAC8568
+  ---------------------------------------------< Sigma-Delta
+  SIGNAL clk_sync_buf                      : std_logic;
+  SIGNAL sdm_clk_disable                   : std_logic;
+  SIGNAL sdm_out1                          : std_logic;
+  SIGNAL sdm_out2                          : std_logic;
+  ---------------------------------------------> Sigma-Delta
   ---------------------------------------------< debug
   SIGNAL dbg_ila_probe0                    : std_logic_vector (63 DOWNTO 0);
   SIGNAL dbg_ila_probe1                    : std_logic_vector (79 DOWNTO 0);
@@ -517,32 +523,32 @@ BEGIN
   status_reg(129 DOWNTO 0) <= dout(129 DOWNTO 0);
   status_reg(130)          <= valid;   
   Top_SR_0 : Top_SR
-   GENERIC MAP (
-   WIDTH =>  130 ,
-   CNT_WIDTH =>  8 ,
-   DIV_WIDTH => 6 ,
-   COUNT_WIDTH => 64 ,
-   SHIFT_DIRECTION => 1 ,
-   READ_TRIG_SRC => 0 ,
-   READ_DELAY => 1
-   )
-   PORT MAP (
-      clk_in    => clk_100MHz,
-      rst       => reset,
-      start     => pulse_out,
-      din       => din,
-      data_in_p => FMC_HPC_LA_P(11),
-      data_in_n => FMC_HPC_LA_N(11),
-      div       => div,
-      clk       => clk_sr_contr,
-      clk_sr_p  => FMC_HPC_LA_P(09),
-      clk_sr_n  => FMC_HPC_LA_N(09),
-      data_out_p  => FMC_HPC_LA_P(10),
-      data_out_n  => FMC_HPC_LA_N(10),
-      load_sr_p => FMC_HPC_LA_P(07),
-      load_sr_n => FMC_HPC_LA_N(07),
-      valid     => valid,
-      dout      => dout
+    GENERIC MAP (
+      WIDTH           => 130,
+      CNT_WIDTH       => 8,
+      DIV_WIDTH       => 6,
+      COUNT_WIDTH     => 64,
+      SHIFT_DIRECTION => 1,
+      READ_TRIG_SRC   => 0,
+      READ_DELAY      => 1
+    )
+    PORT MAP (
+      clk_in     => clk_100MHz,
+      rst        => reset,
+      start      => pulse_out,
+      din        => din,
+      data_in_p  => FMC_HPC_LA_P(11),
+      data_in_n  => FMC_HPC_LA_N(11),
+      div        => div,
+      clk        => clk_sr_contr,
+      clk_sr_p   => FMC_HPC_LA_P(09),
+      clk_sr_n   => FMC_HPC_LA_N(09),
+      data_out_p => FMC_HPC_LA_P(10),
+      data_out_n => FMC_HPC_LA_N(10),
+      load_sr_p  => FMC_HPC_LA_P(07),
+      load_sr_n  => FMC_HPC_LA_N(07),
+      valid      => valid,
+      dout       => dout
     );
   ---------------------------------------------> TOP_SR
   ---------------------------------------------< PULSE_SYNCHRONISE
@@ -604,5 +610,53 @@ BEGIN
       I  => NOT spi_sync_n
     );
   ---------------------------------------------> shiftreg driver for DAC8568
+  ---------------------------------------------< Sigma-Delta
+  clk_sync_ibuf_inst : IBUFDS
+    GENERIC MAP (
+      DQS_BIAS => "FALSE"
+    )
+    PORT MAP (
+      I  => FMC_HPC_LA_P(0),
+      IB => FMC_HPC_LA_N(0),
+      O  => clk_sync_buf
+    );
+  sdm_clk_inst : IOBUFDS
+    GENERIC MAP (
+      DQS_BIAS => "FALSE"
+    )
+    PORT MAP (
+      IO  => FMC_HPC_LA_P(5),
+      IOB => FMC_HPC_LA_N(5),
+      I   => clk_sync_buf,
+      O   => OPEN,
+      T   => sdm_clk_disable
+    );
+  sdm_clk_disable <= NOT config_reg(144);  -- bit 0 of register 9
+
+  sdm_out1_inst : IBUFDS
+    GENERIC MAP (
+      DQS_BIAS => "FALSE"
+    )
+    PORT MAP (
+      I  => FMC_HPC_LA_P(4),
+      IB => FMC_HPC_LA_N(4),
+      O  => sdm_out1
+    );
+  sdm_out2_inst : IBUFDS
+    GENERIC MAP (
+      DQS_BIAS => "FALSE"
+    )
+    PORT MAP (
+      I  => FMC_HPC_LA_P(2),
+      IB => FMC_HPC_LA_N(2),
+      O  => sdm_out2
+    );
+  dbg_ila1_inst : dbg_ila1
+    PORT MAP (
+      CLK    => clk_sync_buf,
+      PROBE0 => (1 => sdm_out2, 0 => sdm_out1, OTHERS => '0'),
+      PROBE1 => (OTHERS => '0')
+    );
+  ---------------------------------------------> Sigma-Delta
 
 END Behavioral;

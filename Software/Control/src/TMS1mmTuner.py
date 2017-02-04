@@ -155,6 +155,7 @@ class TMS1mmConfig(threading.Thread):
     def set_voltage_outputs(self):
         x2gain = 2
         bufferTest = True
+        sdmTest = True
 
         self.tms1mmReg.set_power_down(0, 0)
         self.tms1mmReg.set_power_down(3, 0)
@@ -170,6 +171,11 @@ class TMS1mmConfig(threading.Thread):
         else:
             self.tms1mmReg.set_k(2, 0)
             self.tms1mmReg.set_k(3, 1)
+        if sdmTest:
+            self.tms1mmReg.set_k(4, 0)
+            self.tms1mmReg.set_k(5, 1)
+        else:
+            self.tms1mmReg.set_k(5, 0)
 
         self.tms1mmReg.set_k(6, 1) # 1 - K7 is closed, BufferX2 output to AOUT_BufferX2
         self.tms1mmReg.set_k(7, 1) # 1 - K8 is closed, connect CSA out to AOUT1_CSA
@@ -201,6 +207,9 @@ if __name__ == "__main__":
     dac8568 = TMS1mmSingle.DAC8568(cmd)
     s.sendall(dac8568.turn_on_2V5_ref())
     s.sendall(dac8568.set_voltage(6, 1.2))
+
+    # enable SDM clock
+    s.sendall(cmd.write_register(9, 0x01))
 
     root = tk.Tk()
     root.wm_title("Topmetal-S 1mm version Tuner")
