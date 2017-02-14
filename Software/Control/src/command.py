@@ -21,10 +21,11 @@ class Cmd:
         n = cfun(byref(c_void_p(buf)), c_uint(addr))
         return self.buf.raw[0:n]
 
-    def write_memory(self, addr, aval, nval):
+    def write_memory(self, addr, aval):
         cfun = self.cmdGen.cmd_write_memory
         buf = addressof(self.buf)
-        n = cfun(byref(c_void_p(buf)), c_uint(addr), c_void_p(aval), c_size_t(nval))
+        nval = len(aval)
+        n = cfun(byref(c_void_p(buf)), c_uint(addr), (c_uint32 * nval)(*aval), c_size_t(nval))
         return self.buf.raw[0:n]
 
     def read_memory(self, addr, val):

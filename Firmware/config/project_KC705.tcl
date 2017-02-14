@@ -169,6 +169,10 @@ set files [list \
  "[file normalize "$origin_dir/../src/tm_shiftreg_rw/SR_Control.v"]"\
  "[file normalize "$origin_dir/../src/tm_shiftreg_rw/Clock_SR.v"]"\
  "[file normalize "$origin_dir/../src/tm_shiftreg_rw/Top_SR.v"]"\
+ "[file normalize "$origin_dir/../src/topmetal_analog_scan_diff.vhd"]"\
+ "[file normalize "$origin_dir/../src/topmetal_analog_scan.vhd"]"\
+ "[file normalize "$origin_dir/../src/fifo2shiftreg.vhd"]"\
+ "[file normalize "$origin_dir/../src/shiftreg_drive.vhd"]"\
 ]
 add_files -norecurse -fileset $obj $files
 
@@ -479,7 +483,19 @@ add_files -norecurse -fileset $obj $files
 # Set 'sources_1' fileset file properties for local files
 # None
 
-# Set 'sources_1' fileset object
+#set 'sources_1' fileset object
+set obj [get_filesets sources_1]
+set files [list \
+ "[file normalize "$origin_dir/../ipcore_dir/KC705/bram_sdp_w32r4/bram_sdp_w32r4.xci"]"\
+]
+add_files -norecurse -fileset $obj $files
+
+# Set 'sources_1' fileset file properties for remote files
+# None
+
+# Set 'sources_1' fileset file properties for local files
+# None
+
 set obj [get_filesets sources_1]
 set files [list \
  "[file normalize "$origin_dir/../ipcore_dir/KC705/fifo128to256/fifo128to256.xci"]"\
@@ -548,6 +564,19 @@ add_files -norecurse -fileset $obj $files
 set obj [get_filesets sources_1]
 set files [list \
  "[file normalize "$origin_dir/../ipcore_dir/KC705/fifo16to64/fifo16to64.xci"]"\
+]
+add_files -norecurse -fileset $obj $files
+
+# Set 'sources_1' fileset file properties for remote files
+# None
+
+# Set 'sources_1' fileset file properties for local files
+# None
+
+# Set 'sources_1' fileset object
+set obj [get_filesets sources_1]
+set files [list \
+ "[file normalize "$origin_dir/../ipcore_dir/KC705/fifo16to32/fifo16to32.xci"]"\
 ]
 add_files -norecurse -fileset $obj $files
 
