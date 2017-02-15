@@ -163,32 +163,31 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------< TOP_SR
   COMPONENT Top_SR IS
     GENERIC (
-     WIDTH : positive :=  170 ;
-     CNT_WIDTH : positive :=  8 ;
-     DIV_WIDTH : positive := 6 ;
-     COUNT_WIDTH : positive := 64 ;
-     SHIFT_DIRECTION : positive := 1 ;
-     READ_TRIG_SRC : natural := 0 ;
-     READ_DELAY : natural := 1
-     );
-
+      WIDTH : positive :=  170 ;
+      CNT_WIDTH : positive :=  8 ;
+      DIV_WIDTH : positive := 6 ;
+      COUNT_WIDTH : positive := 64 ;
+      SHIFT_DIRECTION : positive := 1 ;
+      READ_TRIG_SRC : natural := 0 ;
+      READ_DELAY : natural := 1
+    );
     PORT (
-     clk_in      :IN   std_logic;
-     rst         :IN   std_logic;
-     start       :IN   std_logic;
-     din         :IN   std_logic_vector(169 DOWNTO 0);
-     data_in_p   :IN   std_logic;
-     data_in_n   :IN   std_logic;
-     div         :IN   std_logic_vector(5 DOWNTO 0);
-     clk         :OUT  std_logic;
-     clk_sr_p    :OUT  std_logic;
-     clk_sr_n    :OUT  std_logic;
-     data_out_p    :OUT  std_logic;
-     data_out_n    :OUT  std_logic;
-     load_sr_p   :OUT  std_logic;
-     load_sr_n   :OUT  std_logic;
-     valid       :OUT  std_logic;
-     dout        :OUT  std_logic_vector(169 DOWNTO 0)
+      clk_in      :IN   std_logic;
+      rst         :IN   std_logic;
+      start       :IN   std_logic;
+      din         :IN   std_logic_vector(169 DOWNTO 0);
+      data_in_p   :IN   std_logic;
+      data_in_n   :IN   std_logic;
+      div         :IN   std_logic_vector(5 DOWNTO 0);
+      clk         :OUT  std_logic;
+      clk_sr_p    :OUT  std_logic;
+      clk_sr_n    :OUT  std_logic;
+      data_out_p  :OUT  std_logic;
+      data_out_n  :OUT  std_logic;
+      load_sr_p   :OUT  std_logic;
+      load_sr_n   :OUT  std_logic;
+      valid       :OUT  std_logic;
+      dout        :OUT  std_logic_vector(169 DOWNTO 0)
     );
   END COMPONENT;
   ---------------------------------------------> TOP_SR
@@ -200,7 +199,7 @@ ARCHITECTURE Behavioral OF top IS
       clk_out      :IN  std_logic;
       rst          :IN  std_logic;
       pulse_out    :OUT std_logic
-     );
+    );
   END COMPONENT;
   ---------------------------------------------> PULSE_SYNCHRONISE
   ---------------------------------------------< shiftreg driver for DAC8568
@@ -287,8 +286,7 @@ ARCHITECTURE Behavioral OF top IS
       -- output
       TRIGGER_OUT_P : OUT std_logic;
       TRIGGER_OUT_N : OUT std_logic;
-       
-           --
+      --
       SRAM_D0_P     : OUT std_logic;
       SRAM_D0_N     : OUT std_logic;
       SRAM_D1_P     : OUT std_logic;
@@ -297,7 +295,7 @@ ARCHITECTURE Behavioral OF top IS
       SRAM_D2_N     : OUT std_logic;
       SRAM_D3_P     : OUT std_logic;
       SRAM_D3_N     : OUT std_logic;
-      
+      --
       SRAM_WE_P     : OUT std_logic;
       SRAM_WE_N     : OUT std_logic;
       TM_RST_P      : OUT std_logic;      -- digital reset
@@ -310,7 +308,7 @@ ARCHITECTURE Behavioral OF top IS
       TM_START_S_N  : OUT std_logic;
       TM_SPEAK_S_P  : OUT std_logic;
       TM_SPEAK_S_N  : OUT std_logic
-   );
+    );
   END COMPONENT;
   ---------------------------------------------> topmetal_analog_scan_diff
   -- Signals
@@ -388,6 +386,8 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL spi_sclk                          : std_logic;
   SIGNAL spi_data                          : std_logic;
   SIGNAL spi_sync_n                        : std_logic;
+  SIGNAL spi_sync_n1                       : std_logic;
+  SIGNAL spi_sync_n2                       : std_logic;
   ---------------------------------------------> shiftreg driver for DAC8568  
   ---------------------------------------------< debug
   SIGNAL dbg_ila_probe0                    : std_logic_vector (63 DOWNTO 0);
@@ -402,21 +402,13 @@ ARCHITECTURE Behavioral OF top IS
   -- ATTRIBUTE mark_debug OF USB_TX                  : SIGNAL IS "true";
   ---------------------------------------------> debug
   ---------------------------------------------< topmetal_analog_scan_diff
- --SIGNAL  CLK           : std_logic;      -- clock, TM_CLK_S is derived from this one
- --SIGNAL  RESET         : std_logic;      -- reset
- -- data input for writing to in-chip SRAM
- --SIGNAL  MEM_CLK       : std_logic;      -- connect to control_interface
- --SIGNAL  MEM_WE        : std_logic;
- --SIGNAL  MEM_ADDR      : std_logic_vector(31 DOWNTO 0);
- --SIGNAL  MEM_DIN       : std_logic_vector(31 DOWNTO 0);
- SIGNAL  SRAM_WR_START : std_logic;  -- 1 MEM_CLK wide pulse to initiate in-chip SRAM write
- -- configuration
- SIGNAL  CLK_DIV       : std_logic_vector(3 DOWNTO 0);  -- log2(CLK_DIV_WIDTH), CLK/(2**CLK_DIV)
- SIGNAL  WR_CLK_DIV    : std_logic_vector(3 DOWNTO 0);
- SIGNAL  STOP_ADDR     : std_logic_vector(15 DOWNTO 0);  --MSB enables
- SIGNAL  TRIGGER_RATE  : std_logic_vector(15 DOWNTO 0);  --trigger every () frames
- SIGNAL  TRIGGER_DELAY : std_logic_vector(15 DOWNTO 0);
- --SIGNAL  MARKER_A      : std_logic;
+  SIGNAL  SRAM_WR_START : std_logic;  -- 1 MEM_CLK wide pulse to initiate in-chip SRAM write
+  -- configuration
+  SIGNAL  TM_CLK_DIV    : std_logic_vector(3 DOWNTO 0);  -- log2(CLK_DIV_WIDTH), CLK/(2**CLK_DIV)
+  SIGNAL  WR_CLK_DIV    : std_logic_vector(3 DOWNTO 0);
+  SIGNAL  STOP_ADDR     : std_logic_vector(15 DOWNTO 0);  --MSB enables
+  SIGNAL  TRIGGER_RATE  : std_logic_vector(15 DOWNTO 0);  --trigger every () frames
+  SIGNAL  TRIGGER_DELAY : std_logic_vector(15 DOWNTO 0);
   ---------------------------------------------> tometal_analog_scan_diff
 
 BEGIN
@@ -589,34 +581,34 @@ BEGIN
   div                      <= config_reg(175 DOWNTO 170);
   din                      <= config_reg(169 DOWNTO 0);
   status_reg(169 DOWNTO 0) <= dout(169 DOWNTO 0);
-  status_reg(170)          <= valid;   
+  status_reg(170)          <= valid;
   Top_SR_0 : Top_SR
-  GENERIC MAP (
-     WIDTH =>  170 ,
-     CNT_WIDTH =>  8 ,
-     DIV_WIDTH => 6 ,
-     COUNT_WIDTH => 64 ,
-     SHIFT_DIRECTION => 1 ,
-     READ_TRIG_SRC => 0 ,
-     READ_DELAY => 1
-       )
+    GENERIC MAP (
+      WIDTH =>  170 ,
+      CNT_WIDTH =>  8 ,
+      DIV_WIDTH => 6 ,
+      COUNT_WIDTH => 64 ,
+      SHIFT_DIRECTION => 1 ,
+      READ_TRIG_SRC => 0 ,
+      READ_DELAY => 1
+    )
     PORT MAP (
-      clk_in    => clk_100MHz,
-      rst       => reset,
-      start     => pulse_out,
-      din       => din,
-      data_in_p => FMC_HPC_LA_P(20),
-      data_in_n => FMC_HPC_LA_N(20),
-      div       => div,
-      clk       => clk_sr_contr,
-      clk_sr_p  => FMC_HPC_LA_P(18),
-      clk_sr_n  => FMC_HPC_LA_N(18),
-      data_out_p  => FMC_HPC_LA_P(17),
-      data_out_n  => FMC_HPC_LA_N(17),
-      load_sr_p => FMC_HPC_LA_P(19),
-      load_sr_n => FMC_HPC_LA_N(19),
-      valid     => valid,
-      dout      => dout
+      clk_in     => clk_100MHz,
+      rst        => reset,
+      start      => pulse_out,
+      din        => din,
+      data_in_p  => FMC_HPC_LA_P(20),
+      data_in_n  => FMC_HPC_LA_N(20),
+      div        => div,
+      clk        => clk_sr_contr,
+      clk_sr_p   => FMC_HPC_LA_P(18),
+      clk_sr_n   => FMC_HPC_LA_N(18),
+      data_out_p => FMC_HPC_LA_P(17),
+      data_out_n => FMC_HPC_LA_N(17),
+      load_sr_p  => FMC_HPC_LA_P(19),
+      load_sr_n  => FMC_HPC_LA_N(19),
+      valid      => valid,
+      dout       => dout
     );
   ---------------------------------------------> TOP_SR
   ---------------------------------------------< PULSE_SYNCHRONISE
@@ -631,6 +623,8 @@ BEGIN
     );
   ---------------------------------------------> PULSE_SYNCHRONISE
   ---------------------------------------------< shiftreg driver for DAC8568
+  spi_sync_n1 <= spi_sync_n WHEN config_reg(16) = '0' ELSE '1';
+  spi_sync_n2 <= spi_sync_n WHEN config_reg(16) = '1' ELSE '1';   
   dac8568_inst : fifo2shiftreg
     GENERIC MAP (
       WIDTH   => 32,                    -- parallel data width
@@ -668,35 +662,43 @@ BEGIN
       OB => FMC_HPC_LA_N(14),  -- Diff_n output (connect directly to top-level port)
       I  => spi_data
     );
-  spi_sync_n_obufds_inst : OBUFDS
+  spi_sync_n1_obufds_inst : OBUFDS
     GENERIC MAP (
       IOSTANDARD => "LVDS"
     )
     PORT MAP (
       O  => FMC_HPC_LA_P(11),  -- Diff_p output (connect directly to top-level port)
       OB => FMC_HPC_LA_N(11),  -- Diff_n output (connect directly to top-level port)
-      I  => NOT spi_sync_n
+      I  => spi_sync_n1
     );
-  ---------------------------------------------> shiftreg driver for DAC8568    
+  spi_sync_n2_obufds_inst : OBUFDS
+    GENERIC MAP (
+      IOSTANDARD => "LVDS"
+    )
+    PORT MAP (
+      O  => FMC_HPC_LA_P(12),  -- Diff_p output (connect directly to top-level port)
+      OB => FMC_HPC_LA_N(12),  -- Diff_n output (connect directly to top-level port)
+      I  => spi_sync_n2
+    );
+  ---------------------------------------------> shiftreg driver for DAC8568
   ---------------------------------------------< topmetal_analog_scan_diff
   SRAM_WR_START <= pulse_reg(2);
-  CLK_DIV <= config_reg(179 DOWNTO 176);
+  TM_CLK_DIV <= config_reg(179 DOWNTO 176);
   WR_CLK_DIV <= config_reg(183 DOWNTO 180);
   STOP_ADDR <= config_reg(207 DOWNTO 192);
   TRIGGER_RATE <= config_reg(223 DOWNTO 208); 
   TRIGGER_DELAY <= config_reg(239 DOWNTO 224);
-  
   topmetal_analog_scan_diff_inst : topmetal_analog_scan_diff
-  GENERIC MAP(
-      ROWS  => 45,     -- number of ROWS in the array
+    GENERIC MAP(
+      ROWS  =>  45,     -- number of ROWS in the array
       COLS  => 216,     -- number of COLS in the ARRAY
       CLK_DIV_WIDTH => 16,
       CLK_DIV_WLOG2 => 4,
       CONFIG_WIDTH  => 16
-      )
+    )
     PORT MAP (
-      CLK          => control_clk,     -- clock, TM_CLK_S is derived from this one
-      RESET        => reset,      -- reset
+      CLK           => control_clk,     -- clock, TM_CLK_S is derived from this one
+      RESET         => reset,           -- reset
       -- data input for writing to in-chip SRAM
       MEM_CLK       => control_clk,     -- connect to control_interface
       MEM_WE        => control_mem_we,
@@ -704,18 +706,17 @@ BEGIN
       MEM_DIN       => control_mem_din,
       SRAM_WR_START => SRAM_WR_START, -- 1 MEM_CLK wide pulse to initiate in-chip SRAM write
       -- configuration
-      CLK_DIV       => CLK_DIV, -- log2(CLK_DIV_WIDTH), CLK/(2**CLK_DIV)
+      CLK_DIV       => TM_CLK_DIV, -- log2(CLK_DIV_WIDTH), CLK/(2**CLK_DIV)
       WR_CLK_DIV    => WR_CLK_DIV,
       STOP_ADDR     => STOP_ADDR,--MSB enables
       TRIGGER_RATE  => TRIGGER_RATE,--trigger every () frames
       TRIGGER_DELAY => TRIGGER_DELAY,
       -- input
-      MARKER_A    => '0',
+      MARKER_A      => '0',
       -- output
       --TRIGGER_OUT_P => 
       --TRIGGER_OUT_N => 
-       
-           --
+      --
       SRAM_D0_P     => FMC_HPC_LA_P(21),
       SRAM_D0_N     => FMC_HPC_LA_N(21),
       SRAM_D1_P     => FMC_HPC_LA_P(22),
@@ -724,7 +725,7 @@ BEGIN
       SRAM_D2_N     => FMC_HPC_LA_N(23),
       SRAM_D3_P     => FMC_HPC_LA_P(24),
       SRAM_D3_N     => FMC_HPC_LA_N(24),
-      
+      --
       SRAM_WE_P     => FMC_HPC_LA_P(25),
       SRAM_WE_N     => FMC_HPC_LA_N(25),
       --TM_RST_P      => FMC_HPC_LA_P    -- digital reset
@@ -738,7 +739,6 @@ BEGIN
       TM_SPEAK_S_P  => FMC_HPC_LA_P(28),
       TM_SPEAK_S_N  => FMC_HPC_LA_N(28)
    );
-
   ---------------------------------------------> topmetal_analog_scan_diff
 
 END Behavioral;
