@@ -30,20 +30,22 @@ module Top_SR #(parameter WIDTH=170, //% @param Width of data input and output
                 parameter CNT_WIDTH=8, //% @param WIDTH must be no greater than 2**CNT_WIDTH 
                 parameter DIV_WIDTH=6,  //% @param width of division factor.
                 parameter COUNT_WIDTH=64, //% @param Width of clock division counter, it must be greater than 2**DIV_WIDTH.
-                parameter FIFO_WIDTH=36, //% Width of data send to FIFO.
                 parameter VALID_WIDTH=32, //% Width of data_out's valid bits.
-                parameter NUM_WIDTH=4, //% 2**NUM_WIDTH must be greater than WIDTH/FIFO_WIDTH.
+                parameter NUM_WIDTH=4, //% 2**NUM_WIDTH must be greater than DATA_WIDTH/VALID_WIDTH.
+                parameter FIFO_WIDTH=36, //% Width of fifo that data_out sent to
                 parameter SHIFT_DIRECTION=1, //% @param 1: MSB out first, 0: LSB out first  
                 parameter READ_TRIG_SRC=0, //% @param 0:start act as trig, 1: load_sr act as trig   
                 parameter READ_DELAY=1 //% @param state machine delay period             
    ) (
     input clk_in, //% clock input is synchronised with input signals' control clock.
     input rst, //% module reset 
-    input start, //% start signal 
-    input [WIDTH-1:0] din, //% 170-bit data input, to be sent to shift register.
+    input start, //% start signal, it should be asserted after the last assertion of wr_en. 
+    input wr_en, //% enable signal for writing 16-bit din to data_to_send. 
+    input [15:0] din, //% 16-bit data input, to be sent to shift register.
     input data_in_p, //% data from shift register
     input data_in_n, //% data from shift register
     input [DIV_WIDTH-1:0] div, //% clock frequency division factor 2**div
+    input fifo_full, //% control_interface FIFO full signal.
     output clk, //% sub modules' control clock
     output clk_sr_p, //% control clock send to shift register
     output clk_sr_n, //% control clock send to shift register
@@ -51,14 +53,9 @@ module Top_SR #(parameter WIDTH=170, //% @param Width of data input and output
     output data_out_n, //% data send to shift register
     output load_sr_p, //% load signal send to shift register
     output load_sr_n, //% load signal send to shift register
-    //output valid, //% valid is asserted when 170-bit dout is on the output port
-    //output [WIDTH-1:0] dout, //% parallized captured data (170-bit) from shift register
-    
-    //input fifo_full,
-    input data_fifo_rdreq, //% read enable of fifo36x512
-    input data_fifo_rdclk, //% read clock of fifo36x512
-    output [VALID_WIDTH-1:0] data_fifo_q, //% data send to control_interface's internal fifo
-    output data_fifo_empty //% internal fifo's empty signal 
+    output valid, //% valid is asserted when 170-bit dout is on the output port
+    output fifo_wr_en, //% FIFO write enable signal sent to control_interface.
+    output [FIFO_WIDTH-1:0] data_to_fifo //% data send to internal FIFO of control interface.
     );
  
 wire data_in;
@@ -68,6 +65,8 @@ wire load_sr;
 wire trig;
 wire [CNT_WIDTH-1:0] count_delay;
 wire [COUNT_WIDTH-1:0] counter;
+wire [WIDTH-1:0] data_to_send;
+wire [WIDTH-1:0] data_receive;
 
 IBUFDS #(.DIFF_TERM("TRUE"))
   IBUFDS_inst (
@@ -103,10 +102,17 @@ Clock_Div #(.DIV_WIDTH(DIV_WIDTH), .COUNT_WIDTH(COUNT_WIDTH))
         .counter(counter),
         .clk_out(clk)
         );
-            
+Config_data_Combination #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH))
+    config_data_combination_inst(
+        .clk_in(clk_in), 
+        .rst(rst), 
+        .data_in(din), 
+        .pulse(wr_en),
+        .data_out(data_to_send)
+        );            
 SR_Control #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .SHIFT_DIRECTION(SHIFT_DIRECTION))
      sr_control_0(
-         .din(din),
+         .din(data_to_send),
          .clk(clk),
          .rst(rst),
          .start(start),
@@ -152,38 +158,18 @@ Receive_Data #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .SHIFT_DIRECTION(SHIFT
         .rst(rst),
         .start(trig),
         .valid(valid),
-        .dout(dout)
-        );   
+        .dout(data_receive)
+        ); 
         
-wire data_fifo_full;
-wire fifio_wr_en;
-wire [FIFO_WIDTH-1:0] data_to_fifo;  
-wire [WIDTH-1:0] dout;  
-wire valid;    
-Format_Data #(.DATA_WIDTH(WIDTH), .FIFO_WIDTH(FIFO_WIDTH), .VALID_WIDTH(VALID_WIDTH), .NUM_WIDTH(NUM_WIDTH))
-  format_data_inst(
-  .clk(clk),
-  .rst(rst),
-  .start(trig),
-  .data_in(dout),
-  .fifo_full(data_fifo_full),
-  .valid(valid),
-  .fifo_wr_en(fifo_wr_en),
-  .data_out(data_to_fifo)
-  ); 
-  
-wire [FIFO_WIDTH-1:0] data_fifo; 
-assign fifo_data_q = data_fifo[VALID_WIDTH-1:0];
-
-fifo36x512  fifo_sr(
-   .rst(rst),
-   .wr_clk(clk),
-   .rd_clk(data_fifo_rdclk),
-   .din(data_to_fifo),
-   .wr_en(fifo_wr_en),
-   .rd_en(data_fifo_rdreq),
-   .dout(data_fifo),
-   .full(data_fifo_full),
-   .empty(data_fifo_empty)
-    );
-  endmodule
+Format_Data #(.DATA_WIDTH(WIDTH), .VALID_WIDTH(VALID_WIDTH), .NUM_WIDTH(NUM_WIDTH), .FIFO_WIDTH(FIFO_WIDTH))
+     format_data_inst (
+        .clk(clk_in),
+        .rst(rst),
+        .start(start),
+        .data_in(data_receive),
+        .fifo_full(fifo_full),
+        .valid(valid),
+        .fifo_wr_en(fifo_wr_en),
+        .data_out(data_to_fifo)
+        );
+endmodule
