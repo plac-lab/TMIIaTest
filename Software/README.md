@@ -58,3 +58,20 @@ data_to_sram      = [pixel_0, pixel_1, pixel_2,...,pixel_n]
 * config_reg(16) (LSB of register 1) selects one of the two DACs to write to
 * Each pulse registers a 16-bit word set by `config_reg[15:0]`.  Two consecutive 16-bit words are concatenated to form a 32-bit word which is then sent to the DAC. 
 
+# Analysis
+Need [gsl](https://www.gnu.org/software/gsl/) to compile and [gnuplot](http://www.gnuplot.info/) to plot results.
+
+## ENC using injected tail-pulses
+```
+$ ./pulserENC
+Usage:
+      -r rise time in samples[150]
+      -f riseFrac[0.5]
+      -m fltM[-1]
+      -p sPre[1000]
+      -l sLen[4000]
+      -s iStart[0] -e iStop[-1] starting and stopping(+1) eventid
+      inFileName(.h5) outFileName
+```
+Input file should contain one channel (trace) of CSA response to injected tail-pulses.  The output file which contains histogram data can be plotted using `TMS1mmSingleCSAOut1ENC.gp`
+
