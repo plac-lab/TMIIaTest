@@ -253,6 +253,7 @@ BEGIN
           driveState1     <= S4;
         WHEN S4 =>                      -- wait a clk cycle then speak
           TM_START_S_buf1 <= '0';
+          TM_SPEAK_S_buf1 <= '1';
           driveState1     <= S5;       
         WHEN S5 =>
           TM_SPEAK_S_buf1 <= '1';

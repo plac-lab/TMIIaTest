@@ -70,7 +70,8 @@ if __name__ == "__main__":
     
     #data_to_sram is 45*216 lenth array
     start_addr = 0
-    data_to_sram = [0x5, 0xa, 0x5, 0xa]
+    #data_to_sram = [0x5, 0xa, 0x5, 0xa]
+    data_to_sram = [i for i in xrange(9719)]
     tm_sram_config(s, start_addr, data_to_sram)
 
     clk_div = 2
