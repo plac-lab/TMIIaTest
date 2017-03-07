@@ -158,6 +158,7 @@ ARCHITECTURE Behavioral OF top IS
       DATA_FIFO_RDCLK : OUT std_logic
     );
   END COMPONENT;
+  ---------------------------------------------> gig_eth
   ---------------------------------------------< TOP_SR
   COMPONENT Top_SR IS
     GENERIC (
@@ -651,12 +652,12 @@ BEGIN
       IB => FMC_HPC_LA_N(2),
       O  => sdm_out2
     );
-  dbg_ila1_inst : dbg_ila1
-    PORT MAP (
-      CLK    => clk_sync_buf,
-      PROBE0 => (1 => sdm_out2, 0 => sdm_out1, OTHERS => '0'),
-      PROBE1 => (OTHERS => '0')
-    );
+--  dbg_ila1_inst : dbg_ila1
+--    PORT MAP (
+--      CLK    => clk_sync_buf,
+--      PROBE0 => (1 => sdm_out2, 0 => sdm_out1, OTHERS => '0'),
+--      PROBE1 => (OTHERS => '0')
+--    );
   ---------------------------------------------> Sigma-Delta
 
 END Behavioral;
