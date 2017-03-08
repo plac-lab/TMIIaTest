@@ -122,7 +122,7 @@ begin
    else
     begin
      dout<=dout;
-     valid<=valid;
+     valid<=0;
     end
   end
 end

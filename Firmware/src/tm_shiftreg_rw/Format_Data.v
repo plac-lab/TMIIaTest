@@ -29,7 +29,7 @@ parameter s2=4'b0100;
 parameter s3=4'b1000;
 
 //assign multi = {VALID_WIDTH{1'b1}} << TOTAL_DATA_WIDTH-VALID_WIDTH;
-always@(posedge clk or posedge rst)
+always@(negedge clk or posedge rst)
 begin
 if(rst)
  begin
@@ -60,7 +60,7 @@ begin
   end
 end
 
-always@(posedge clk or posedge rst)
+always@(negedge clk or posedge rst)
 begin
 if(rst)
  begin

@@ -45,7 +45,7 @@ module Top_SR #(parameter WIDTH=170, //% @param Width of data input and output
     input data_in_p, //% data from shift register
     input data_in_n, //% data from shift register
     input [DIV_WIDTH-1:0] div, //% clock frequency division factor 2**div
-    input fifo_full, //% control_interface FIFO full signal.
+    input fifo_rd_en, //% control_interface FIFO full signal.
     output clk, //% sub modules' control clock
     output clk_sr_p, //% control clock send to shift register
     output clk_sr_n, //% control clock send to shift register
@@ -53,9 +53,8 @@ module Top_SR #(parameter WIDTH=170, //% @param Width of data input and output
     output data_out_n, //% data send to shift register
     output load_sr_p, //% load signal send to shift register
     output load_sr_n, //% load signal send to shift register
-    output valid, //% valid is asserted when 170-bit dout is on the output port
-    output fifo_wr_en, //% FIFO write enable signal sent to control_interface.
-    output [FIFO_WIDTH-1:0] data_to_fifo //% data send to internal FIFO of control interface.
+    output fifo_empty, //% FIFO empty signal sent to control_interface.
+    output [FIFO_WIDTH-1:0] fifo_q //% data send to internal FIFO of control interface.
     );
  
 wire data_in;
@@ -63,6 +62,10 @@ wire data_out;
 wire clk_sr;
 wire load_sr;
 wire trig;
+wire fifo_full;
+wire fifo_wr_en;
+wire valid;
+wire [FIFO_WIDTH-1:0] data_to_fifo;
 wire [CNT_WIDTH-1:0] count_delay;
 wire [COUNT_WIDTH-1:0] counter;
 wire [WIDTH-1:0] data_to_send;
@@ -112,14 +115,13 @@ Config_data_Combination #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH))
         );            
 SR_Control #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .SHIFT_DIRECTION(SHIFT_DIRECTION))
      sr_control_0(
-         .din(data_to_send),
-         .clk(clk),
-         .rst(rst),
-         .start(start),
-         .data_out(data_out),
-         .load_sr(load_sr),
-         .count_delay(count_delay)
-         //.clk_sr(clk_sr)
+        .din(data_to_send),
+        .clk(clk),
+        .rst(rst),
+        .start(start),
+        .data_out(data_out),
+        .load_sr(load_sr),
+        .count_delay(count_delay)
         );
         
 reg start_reg;
@@ -172,4 +174,16 @@ Format_Data #(.DATA_WIDTH(WIDTH), .VALID_WIDTH(VALID_WIDTH), .NUM_WIDTH(NUM_WIDT
         .fifo_wr_en(fifo_wr_en),
         .data_out(data_to_fifo)
         );
+
+fifo36x512 fifo_sr_inst(
+        .rst(rst),
+        .wr_clk(clk_in),
+        .rd_clk(clk_in),
+        .din(data_to_fifo),
+        .wr_en(fifo_wr_en),
+        .rd_en(fifo_rd_en),
+        .dout(fifo_q),
+        .full(fifo_full),
+        .empty(fifo_empty)
+        );        
 endmodule
