@@ -39,6 +39,8 @@ The following section documents the configuration and pulse registeres each modu
 config_reg[239:224] : TRIGGER_RATE 
 config_reg[223:208] : TRIGGER_DELAY
 config_reg[207:192] : STOP_ADDR   # When MSB = '1', the scan will stop at pixel # STOP_ADDR[14:0]
+config_reg[185]     : STOP_CLK_S  # 1: TM_CLK_S stops running, 0: TM_CLK_S keeps running 
+config_reg[184]     : KEEP_WE     # 1: SRAM_WE stays high in writing mode, 0: SRAM_WE is quadrature lagging to TM_CLK_S
 config_reg[183:180] : WR_CLK_DIV  # SRAM write clock frequency is 100MHz/2**WR_CLK_DIV
 config_reg[179:176] : CLK_DIV     # Scan clock frequency is 100MHz/2**CLK_DIV
 ```
