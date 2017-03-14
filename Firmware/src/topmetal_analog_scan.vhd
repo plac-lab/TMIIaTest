@@ -40,6 +40,8 @@ ENTITY topmetal_analog_scan IS
     STOP_ADDR     : IN  std_logic_vector(CONFIG_WIDTH-1 DOWNTO 0);  --MSB enables
     TRIGGER_RATE  : IN  std_logic_vector(CONFIG_WIDTH-1 DOWNTO 0);  --trigger every () frames
     TRIGGER_DELAY : IN  std_logic_vector(CONFIG_WIDTH-1 DOWNTO 0);
+    STOP_CLK_S    : IN  std_logic;  -- 1: stop TM_CLK_S, 0: run TM_CLK_S
+    KEEP_WE       : IN  std_logic;  -- 1: SRAM_WE keep high in writing mode, 0: SRAM_WE runs in writing mode
     -- input
     MARKER_A      : IN  std_logic;
     -- output
@@ -93,6 +95,8 @@ ARCHITECTURE Behavioral OF topmetal_analog_scan IS
   SIGNAL sram_wr_clk     : std_logic;
   SIGNAL sram_we_clk     : std_logic;
   SIGNAL sram_writing    : std_logic;
+  SIGNAL sram_we_buf     : std_logic;
+  SIGNAL sram_we_keep    : std_logic;
   --
   SIGNAL bram_wea        : std_logic_vector(0 DOWNTO 0);
   SIGNAL bram_outb       : std_logic_vector(3 DOWNTO 0);
@@ -156,6 +160,7 @@ BEGIN
                  clk_cnt(to_integer(unsigned(WR_CLK_DIV))-1);     
   we_clk_cnt <= to_unsigned(0, clk_cnt'length) WHEN clk_cnt = 0 ELSE
                 clk_cnt - we_clk_cnt_p0;
+--  we_clk_cnt <= clk_cnt - we_clk_cnt_p0;
   sram_we_clk <= we_clk_cnt(to_integer(unsigned(WR_CLK_DIV))-2);                                   
 
   tm_proc : PROCESS (TM_CLK_buf, RESET)
@@ -230,11 +235,13 @@ BEGIN
       TM_RST_S_buf1   <= '0';
       TM_START_S_buf1 <= '0';
       TM_SPEAK_S_buf1 <= '0';
+      sram_we_keep    <= '0';
       driveState1     <= S0;
     ELSIF falling_edge(sram_wr_clk) THEN
       TM_RST_S_buf1   <= '0';
       TM_START_S_buf1 <= '0';
       TM_SPEAK_S_buf1 <= '0';
+      sram_we_keep    <= '0';
       bram_addrb_cnt  <= to_unsigned(0, bram_addrb_cnt'length);
       CASE driveState1 IS
         WHEN S0 =>
@@ -254,19 +261,23 @@ BEGIN
         WHEN S4 =>                      -- wait a clk cycle then speak
           TM_START_S_buf1 <= '0';
           TM_SPEAK_S_buf1 <= '1';
+          sram_we_keep    <= '1';
           driveState1     <= S5;       
         WHEN S5 =>
           TM_SPEAK_S_buf1 <= '1';
+          sram_we_keep    <= '1';
           bram_addrb_cnt <= bram_addrb_cnt + 1;          
           IF bram_addrb_cnt = to_unsigned(ROWS*COLS-2, bram_addrb_cnt'length) THEN
             driveState1 <= S6;   
           END IF;
         WHEN S6 =>
           TM_SPEAK_S_buf1 <= '0';
+          sram_we_keep    <= '0';
           sram_writing    <= '0';
           driveState1     <= S0;
         WHEN OTHERS =>
           TM_SPEAK_S_buf1 <= '0';
+          sram_we_keep    <= '0';
           sram_writing    <= '0';
           driveState1     <= S0;
       END CASE;
@@ -276,10 +287,10 @@ BEGIN
   write_en_pros : PROCESS(sram_we_clk, RESET)
   BEGIN
   IF RESET = '1' THEN       
-    SRAM_WE         <= '0';
+    sram_we_buf     <= '0';
     driveState2     <= S0;
   ELSIF falling_edge(sram_we_clk) THEN
-    SRAM_WE         <= '0';
+    sram_we_buf     <= '0';
     CASE driveState2 IS
       WHEN S0 =>
         IF sram_writing = '1' AND TM_START_S_buf1 = '1' THEN
@@ -294,7 +305,7 @@ BEGIN
           driveState2     <= S0;
         END IF;
       WHEN S2 =>
-         SRAM_WE <= '1';
+         sram_we_buf <= '1';
          IF bram_addrb_cnt = to_unsigned(ROWS*COLS-1, bram_addrb_cnt'length) THEN
             driveState2 <= S0;  
          ELSE
@@ -310,11 +321,13 @@ BEGIN
 
   -- output
   TM_RST      <= RESET;
-  TM_CLK_S    <= sram_wr_clk     WHEN sram_writing = '1' ELSE TM_CLK_buf;
+  TM_CLK_S    <= '1'             WHEN STOP_CLK_S   = '1' ELSE 
+                 sram_wr_clk     WHEN sram_writing = '1' ELSE TM_CLK_buf;
   TM_RST_S    <= TM_RST_S_buf1   WHEN sram_writing = '1' ELSE TM_RST_S_buf;
   TM_START_S  <= TM_START_S_buf1 WHEN sram_writing = '1' ELSE TM_START_S_buf;
   TM_SPEAK_S  <= TM_SPEAK_S_buf1 WHEN sram_writing = '1' ELSE TM_SPEAK_S_buf;
   TRIGGER_OUT <= trigger_buf;
+  SRAM_WE     <= sram_we_keep    WHEN KEEP_WE      = '1' ELSE sram_we_buf;
   --
   SRAM_D      <= bram_outb(SRAM_D'length-1 DOWNTO 0);
 

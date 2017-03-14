@@ -281,6 +281,8 @@ ARCHITECTURE Behavioral OF top IS
       STOP_ADDR     : IN  std_logic_vector(CONFIG_WIDTH-1 DOWNTO 0);  --MSB enables
       TRIGGER_RATE  : IN  std_logic_vector(CONFIG_WIDTH-1 DOWNTO 0);  --trigger every () frames
       TRIGGER_DELAY : IN  std_logic_vector(CONFIG_WIDTH-1 DOWNTO 0);
+      STOP_CLK_S    : IN  std_logic;  -- 1: stop TM_CLK_S, 0: run TM_CLK_S
+      KEEP_WE       : IN  std_logic;  -- 1: SRAM_WE keep high in writing mode, 0: SRAM_WE runs in writing mode
       -- input
       MARKER_A      : IN  std_logic;
       -- output
@@ -409,6 +411,8 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL  STOP_ADDR     : std_logic_vector(15 DOWNTO 0);  --MSB enables
   SIGNAL  TRIGGER_RATE  : std_logic_vector(15 DOWNTO 0);  --trigger every () frames
   SIGNAL  TRIGGER_DELAY : std_logic_vector(15 DOWNTO 0);
+  SIGNAL  STOP_CLK_S    : std_logic;  -- 1: stop TM_CLK_S, 0: run TM_CLK_S
+  SIGNAL  KEEP_WE       : std_logic;  -- 1: SRAM_WE keep high in writing mode, 0: SRAM_WE runs in writing mode
   ---------------------------------------------> tometal_analog_scan_diff
 
 BEGIN
@@ -683,10 +687,12 @@ BEGIN
   ---------------------------------------------> shiftreg driver for DAC8568
   ---------------------------------------------< topmetal_analog_scan_diff
   SRAM_WR_START <= pulse_reg(2);
-  TM_CLK_DIV <= config_reg(179 DOWNTO 176);
-  WR_CLK_DIV <= config_reg(183 DOWNTO 180);
-  STOP_ADDR <= config_reg(207 DOWNTO 192);
-  TRIGGER_RATE <= config_reg(223 DOWNTO 208); 
+  TM_CLK_DIV    <= config_reg(179 DOWNTO 176);
+  WR_CLK_DIV    <= config_reg(183 DOWNTO 180);
+  STOP_CLK_S    <= config_reg(184);
+  KEEP_WE       <= config_reg(185);
+  STOP_ADDR     <= config_reg(207 DOWNTO 192);
+  TRIGGER_RATE  <= config_reg(223 DOWNTO 208); 
   TRIGGER_DELAY <= config_reg(239 DOWNTO 224);
   topmetal_analog_scan_diff_inst : topmetal_analog_scan_diff
     GENERIC MAP(
@@ -711,6 +717,8 @@ BEGIN
       STOP_ADDR     => STOP_ADDR,--MSB enables
       TRIGGER_RATE  => TRIGGER_RATE,--trigger every () frames
       TRIGGER_DELAY => TRIGGER_DELAY,
+      STOP_CLK_S    => STOP_CLK_S,
+      KEEP_WE       => KEEP_WE,
       -- input
       MARKER_A      => '0',
       -- output

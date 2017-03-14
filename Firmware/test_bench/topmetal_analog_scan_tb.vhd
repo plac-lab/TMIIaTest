@@ -41,8 +41,8 @@ ARCHITECTURE behavior OF topmetal_analog_scan_tb IS
   
   COMPONENT topmetal_analog_scan
     GENERIC (
-      ROWS          : positive := 3;     -- number of ROWS in the array
-      COLS          : positive := 4;     -- number of COLS in the ARRAY
+      ROWS          : positive := 15;     -- number of ROWS in the array
+      COLS          : positive := 40;     -- number of COLS in the ARRAY
       CLK_DIV_WIDTH : positive := 16;
       CLK_DIV_WLOG2 : positive := 4;
       CONFIG_WIDTH  : positive := 16
@@ -60,6 +60,8 @@ ARCHITECTURE behavior OF topmetal_analog_scan_tb IS
       STOP_ADDR     : IN  std_logic_vector(15 DOWNTO 0);
       TRIGGER_RATE  : IN  std_logic_vector(15 DOWNTO 0);
       TRIGGER_DELAY : IN  std_logic_vector(15 DOWNTO 0);
+      STOP_CLK_S    : IN  std_logic;
+      KEEP_WE       : IN  std_logic;
       MARKER_A      : IN  std_logic;
       TRIGGER_OUT   : OUT std_logic;
       SRAM_D        : OUT std_logic_vector(3 DOWNTO 0);
@@ -81,11 +83,13 @@ ARCHITECTURE behavior OF topmetal_analog_scan_tb IS
   SIGNAL MEM_ADDR      : std_logic_vector(31 DOWNTO 0) := (OTHERS => '0');
   SIGNAL MEM_DIN       : std_logic_vector(31 DOWNTO 0) := (OTHERS => '0');
   SIGNAL SRAM_WR_START : std_logic                     := '0';
-  SIGNAL CLK_DIV       : std_logic_vector(3 DOWNTO 0)  := x"1";
-  SIGNAL WR_CLK_DIV    : std_logic_vector(3 DOWNTO 0)  := x"2";
+  SIGNAL CLK_DIV       : std_logic_vector(3 DOWNTO 0)  := x"4";
+  SIGNAL WR_CLK_DIV    : std_logic_vector(3 DOWNTO 0)  := x"5";
   SIGNAL STOP_ADDR     : std_logic_vector(15 DOWNTO 0) := x"0001";
   SIGNAL TRIGGER_RATE  : std_logic_vector(15 DOWNTO 0) := x"0004";
   SIGNAL TRIGGER_DELAY : std_logic_vector(15 DOWNTO 0) := x"0001";
+  SIGNAL STOP_CLK_S    : std_logic                     := '0';
+  SIGNAL KEEP_WE       : std_logic                     := '1';
   SIGNAL MARKER_A      : std_logic                     := '0';
 
   --Outputs
@@ -118,6 +122,8 @@ BEGIN
     STOP_ADDR     => STOP_ADDR,
     TRIGGER_RATE  => TRIGGER_RATE,
     TRIGGER_DELAY => TRIGGER_DELAY,
+    STOP_CLK_S    => STOP_CLk_S,
+    KEEP_WE       => KEEP_WE,
     MARKER_A      => MARKER_A,
     TRIGGER_OUT   => TRIGGER_OUT,
     SRAM_D        => SRAM_D,
@@ -175,11 +181,15 @@ BEGIN
     SRAM_WR_START <= '1';
     WAIT FOR MEM_CLK_period;
     SRAM_WR_START <= '0';
-    WAIT FOR 18000ns;
+    WAIT FOR 300000ns;
     SRAM_WR_START <= '1';
     WAIT FOR MEM_CLK_period;
     SRAM_WR_START <= '0';
-    STOP_ADDR <= x"8003";
+    WAIT FOR 2000000ns;
+    STOP_CLK_S    <= '1';
+    WAIT FOR 10000ns;
+    STOP_CLK_S    <= '0';
+    --STOP_ADDR <= x"8003";
     WAIT;
   END PROCESS;
 

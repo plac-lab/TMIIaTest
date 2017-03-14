@@ -40,6 +40,8 @@ ENTITY topmetal_analog_scan_diff IS
     STOP_ADDR     : IN  std_logic_vector(CONFIG_WIDTH-1 DOWNTO 0);  --MSB enables
     TRIGGER_RATE  : IN  std_logic_vector(CONFIG_WIDTH-1 DOWNTO 0);  --trigger every () frames
     TRIGGER_DELAY : IN  std_logic_vector(CONFIG_WIDTH-1 DOWNTO 0);
+    STOP_CLK_S    : IN  std_logic;  -- 1: stop TM_CLK_S, 0: run TM_CLK_S
+    KEEP_WE       : IN  std_logic;  -- 1: SRAM_WE keep high in writing mode, 0: SRAM_WE runs in writing mode
     -- input
     MARKER_A      : IN  std_logic;
     -- output
@@ -96,6 +98,8 @@ ARCHITECTURE Behavioral OF topmetal_analog_scan_diff IS
       STOP_ADDR     : IN  std_logic_vector(CONFIG_WIDTH-1 DOWNTO 0);  --MSB enables
       TRIGGER_RATE  : IN  std_logic_vector(CONFIG_WIDTH-1 DOWNTO 0);  --trigger every () frames
       TRIGGER_DELAY : IN  std_logic_vector(CONFIG_WIDTH-1 DOWNTO 0);
+      STOP_CLK_S    : IN  std_logic;  -- 1: stop TM_CLK_S, 0: run TM_CLK_S
+      KEEP_WE       : IN  std_logic;  -- 1: SRAM_WE keep high in writing mode, 0: SRAM_WE runs in writing mode
       -- input
       MARKER_A      : IN  std_logic;
       -- output
@@ -149,6 +153,8 @@ BEGIN
      STOP_ADDR      => STOP_ADDR,--MSB enables
      TRIGGER_RATE   => TRIGGER_RATE,--trigger every () frames
      TRIGGER_DELAY  => TRIGGER_DELAY,
+     STOP_CLK_S     => STOP_CLK_S,
+     KEEP_WE        => KEEP_WE,
      -- input
      MARKER_A       => MARKER_A,
      -- output

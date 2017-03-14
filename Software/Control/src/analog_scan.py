@@ -41,13 +41,13 @@ def tm_sram_config(s, start_addr, data_to_sram):
 # @param[in] wr_clk_div clock frequency division factor when writing data into p# ixel.
 # @param[in] stop_addr controls where scanning stop.
 
-def tm_array_scan(s, clk_div, wr_clk_div, stop_addr, trig_rate, trig_delay):
+def tm_array_scan(s, clk_div, wr_clk_div, stop_addr, trig_rate, trig_delay, stop_clk_s, keep_we):
     
     cmd = Cmd()
     cmdstr = ""
 
     #write_register
-    config_reg = ((trig_delay & 0xffff) << 48)|((trig_rate & 0xffff) << 32)|((stop_addr & 0xffff) << 16)|((wr_clk_div & 0xf) << 4)|(clk_div & 0xf)
+    config_reg = ((trig_delay & 0xffff) << 48)|((trig_rate & 0xffff) << 32)|((stop_addr & 0xffff) << 16)|((keep_we & 0x1) << 9)|((stop_clk_s & 0x1) << 8)|((wr_clk_div & 0xf) << 4)|(clk_div & 0xf)
     for i in xrange(4):
         cmdstr += cmd.write_register(i+11, (config_reg >> i*16) & 0xffff)
     
@@ -74,11 +74,13 @@ if __name__ == "__main__":
     data_to_sram = [i for i in xrange(9719)]
     tm_sram_config(s, start_addr, data_to_sram)
 
-    clk_div = 2
-    wr_clk_div = 3
-    stop_addr = 1 
-    trig_rate = 4
+    clk_div    = 7
+    wr_clk_div = 14
+    stop_addr  = 1 
+    trig_rate  = 4
     trig_delay = 1
-    tm_array_scan(s, clk_div, wr_clk_div, stop_addr, trig_rate, trig_delay)
+    stop_clk_s = 0
+    keep_we    = 1
+    tm_array_scan(s, clk_div, wr_clk_div, stop_addr, trig_rate, trig_delay, stop_clk_s, keep_we)
     
     s.close()
