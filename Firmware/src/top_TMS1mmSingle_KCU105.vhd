@@ -23,7 +23,7 @@ USE work.utility.ALL;
 
 ENTITY top IS
   GENERIC (
-    ENABLE_DEBUG       : boolean := false;
+    ENABLE_DEBUG       : boolean := true;
     ENABLE_GIG_ETH     : boolean := true;
     ENABLE_TEN_GIG_ETH : boolean := true
   );
@@ -55,13 +55,13 @@ ENTITY top IS
     SGMII_TX_P   : OUT   std_logic;
     SGMII_TX_N   : OUT   std_logic;
     -- FMC HPC
-    FMC_HPC_HA_P     :INOUT    std_logic_vector(23 DOWNTO 0);
-    FMC_HPC_HA_N     :INOUT    std_logic_vector(23 DOWNTO 0);
-    FMC_HPC_LA_P     :INOUT    std_logic_vector(33 DOWNTO 0);
-    FMC_HPC_LA_N     :INOUT    std_logic_vector(33 DOWNTO 0);
+    FMC_HPC_HA_P : INOUT std_logic_vector(23 DOWNTO 0);
+    FMC_HPC_HA_N : INOUT std_logic_vector(23 DOWNTO 0);
+    FMC_HPC_LA_P : INOUT std_logic_vector(33 DOWNTO 0);
+    FMC_HPC_LA_N : INOUT std_logic_vector(33 DOWNTO 0);
     -- FMC LPC
-    FMC_LPC_LA_P     :INOUT    std_logic_vector(33 DOWNTO 0);
-    FMC_LPC_LA_N     :INOUT    std_logic_vector(33 DOWNTO 0)
+    FMC_LPC_LA_P : INOUT std_logic_vector(33 DOWNTO 0);
+    FMC_LPC_LA_N : INOUT std_logic_vector(33 DOWNTO 0)
   );
 END top;
 
@@ -336,6 +336,7 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------< Sigma-Delta
   SIGNAL clk_sync_buf                      : std_logic;
   SIGNAL sdm_clk_disable                   : std_logic;
+  SIGNAL sdm_clk_c_en                      : std_logic;
   SIGNAL sdm_out1                          : std_logic;
   SIGNAL sdm_out2                          : std_logic;
   ---------------------------------------------> Sigma-Delta
@@ -538,16 +539,16 @@ BEGIN
       rst        => reset,
       start      => pulse_out,
       din        => din,
-      data_in_p  => FMC_HPC_LA_P(11),
-      data_in_n  => FMC_HPC_LA_N(11),
+      data_in_p  => FMC_HPC_LA_P(10),
+      data_in_n  => FMC_HPC_LA_N(10),
       div        => div,
       clk        => clk_sr_contr,
-      clk_sr_p   => FMC_HPC_LA_P(09),
-      clk_sr_n   => FMC_HPC_LA_N(09),
-      data_out_p => FMC_HPC_LA_P(10),
-      data_out_n => FMC_HPC_LA_N(10),
-      load_sr_p  => FMC_HPC_LA_P(07),
-      load_sr_n  => FMC_HPC_LA_N(07),
+      clk_sr_p   => FMC_HPC_LA_P(8),
+      clk_sr_n   => FMC_HPC_LA_N(8),
+      data_out_p => FMC_HPC_LA_P(9),
+      data_out_n => FMC_HPC_LA_N(9),
+      load_sr_p  => FMC_HPC_LA_P(7),
+      load_sr_n  => FMC_HPC_LA_N(7),
       valid      => valid,
       dout       => dout
     );
@@ -588,8 +589,8 @@ BEGIN
       IOSTANDARD => "LVDS"
     )
     PORT MAP (
-      O  => FMC_HPC_LA_P(13),  -- Diff_p output (connect directly to top-level port)
-      OB => FMC_HPC_LA_N(13),  -- Diff_n output (connect directly to top-level port)
+      O  => FMC_HPC_LA_P(14),  -- Diff_p output (connect directly to top-level port)
+      OB => FMC_HPC_LA_N(14),  -- Diff_n output (connect directly to top-level port)
       I  => spi_sclk
     );
   spi_data_obufds_inst : OBUFDS
@@ -597,8 +598,8 @@ BEGIN
       IOSTANDARD => "LVDS"
     )
     PORT MAP (
-      O  => FMC_HPC_LA_P(14),  -- Diff_p output (connect directly to top-level port)
-      OB => FMC_HPC_LA_N(14),  -- Diff_n output (connect directly to top-level port)
+      O  => FMC_HPC_LA_P(13),  -- Diff_p output (connect directly to top-level port)
+      OB => FMC_HPC_LA_N(13),  -- Diff_n output (connect directly to top-level port)
       I  => spi_data
     );
   spi_sync_n_obufds_inst : OBUFDS
@@ -608,7 +609,7 @@ BEGIN
     PORT MAP (
       O  => FMC_HPC_LA_P(12),  -- Diff_p output (connect directly to top-level port)
       OB => FMC_HPC_LA_N(12),  -- Diff_n output (connect directly to top-level port)
-      I  => NOT spi_sync_n
+      I  => spi_sync_n
     );
   ---------------------------------------------> shiftreg driver for DAC8568
   ---------------------------------------------< Sigma-Delta
@@ -617,11 +618,11 @@ BEGIN
       DQS_BIAS => "FALSE"
     )
     PORT MAP (
-      I  => FMC_HPC_LA_P(0),
-      IB => FMC_HPC_LA_N(0),
+      I  => FMC_HPC_LA_P(6),
+      IB => FMC_HPC_LA_N(6),
       O  => clk_sync_buf
     );
-  sdm_clk_inst : IOBUFDS
+  sdm_clk_iobufds_inst : IOBUFDS
     GENERIC MAP (
       DQS_BIAS => "FALSE"
     )
@@ -632,9 +633,19 @@ BEGIN
       O   => OPEN,
       T   => sdm_clk_disable
     );
-  sdm_clk_disable <= NOT config_reg(144);  -- bit 0 of register 9
-
-  sdm_out1_inst : IBUFDS
+  sdm_clk_disable <= NOT config_reg(16*9 + 0);  -- bit 0 of register 9
+  sdm_clk_c_en_obufds_inst : OBUFDS
+    GENERIC MAP (
+      IOSTANDARD => "LVDS"
+    )
+    PORT MAP (
+      O  => FMC_HPC_LA_P(11),  -- Diff_p output (connect directly to top-level port)
+      OB => FMC_HPC_LA_N(11),  -- Diff_n output (connect directly to top-level port)
+      I  => sdm_clk_c_en
+    );
+  sdm_clk_c_en <= config_reg(16*9 + 1);  -- bit 1 of register 9
+  --
+  sdm_out1_ibufds_inst : IBUFDS
     GENERIC MAP (
       DQS_BIAS => "FALSE"
     )
@@ -643,7 +654,7 @@ BEGIN
       IB => FMC_HPC_LA_N(4),
       O  => sdm_out1
     );
-  sdm_out2_inst : IBUFDS
+  sdm_out2_ibufds_inst : IBUFDS
     GENERIC MAP (
       DQS_BIAS => "FALSE"
     )
@@ -652,12 +663,14 @@ BEGIN
       IB => FMC_HPC_LA_N(2),
       O  => sdm_out2
     );
---  dbg_ila1_inst : dbg_ila1
---    PORT MAP (
---      CLK    => clk_sync_buf,
---      PROBE0 => (1 => sdm_out2, 0 => sdm_out1, OTHERS => '0'),
---      PROBE1 => (OTHERS => '0')
---    );
+  dbg_cores : IF ENABLE_DEBUG GENERATE
+    dbg_ila1_inst : dbg_ila1
+      PORT MAP (
+        CLK    => clk_sync_buf,
+        PROBE0 => (1 => sdm_out2, 0 => sdm_out1, OTHERS => '0'),
+        PROBE1 => (OTHERS => '0')
+      );
+  END GENERATE dbg_cores;
   ---------------------------------------------> Sigma-Delta
 
 END Behavioral;
