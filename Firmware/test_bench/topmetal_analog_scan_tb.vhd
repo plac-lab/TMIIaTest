@@ -41,8 +41,8 @@ ARCHITECTURE behavior OF topmetal_analog_scan_tb IS
   
   COMPONENT topmetal_analog_scan
     GENERIC (
-      ROWS          : positive := 15;     -- number of ROWS in the array
-      COLS          : positive := 40;     -- number of COLS in the ARRAY
+      ROWS          : positive := 10;     -- number of ROWS in the array
+      COLS          : positive := 12;     -- number of COLS in the ARRAY
       CLK_DIV_WIDTH : positive := 16;
       CLK_DIV_WLOG2 : positive := 4;
       CONFIG_WIDTH  : positive := 16
@@ -89,7 +89,7 @@ ARCHITECTURE behavior OF topmetal_analog_scan_tb IS
   SIGNAL TRIGGER_RATE  : std_logic_vector(15 DOWNTO 0) := x"0004";
   SIGNAL TRIGGER_DELAY : std_logic_vector(15 DOWNTO 0) := x"0001";
   SIGNAL STOP_CLK_S    : std_logic                     := '0';
-  SIGNAL KEEP_WE       : std_logic                     := '1';
+  SIGNAL KEEP_WE       : std_logic                     := '0';
   SIGNAL MARKER_A      : std_logic                     := '0';
 
   --Outputs
@@ -182,6 +182,7 @@ BEGIN
     WAIT FOR MEM_CLK_period;
     SRAM_WR_START <= '0';
     WAIT FOR 300000ns;
+    KEEP_WE       <= '1';
     SRAM_WR_START <= '1';
     WAIT FOR MEM_CLK_period;
     SRAM_WR_START <= '0';
