@@ -23,7 +23,7 @@ USE work.utility.ALL;
 
 ENTITY top IS
   GENERIC (
-    ENABLE_DEBUG       : boolean := true;
+    ENABLE_DEBUG       : boolean := false;
     ENABLE_GIG_ETH     : boolean := true;
     ENABLE_TEN_GIG_ETH : boolean := true
   );
@@ -692,8 +692,6 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL spi_sclk                          : std_logic;
   SIGNAL spi_data                          : std_logic;
   SIGNAL spi_sync_n                        : std_logic;
-  SIGNAL spi_sync_n1                       : std_logic;
-  SIGNAL spi_sync_n2                       : std_logic;  
   ---------------------------------------------> shiftreg driver for DAC8568
   ---------------------------------------------< Sigma-Delta
   SIGNAL clk_sync_buf                      : std_logic;
@@ -1265,8 +1263,6 @@ BEGIN
     );
   ---------------------------------------------> PULSE_SYNCHRONISE
   ---------------------------------------------< shiftreg driver for DAC8568
-  spi_sync_n1 <= spi_sync_n WHEN config_reg(16) = '0' ELSE '1';
-  spi_sync_n2 <= spi_sync_n WHEN config_reg(16) = '1' ELSE '1';   
   dac8568_inst : fifo2shiftreg
     GENERIC MAP (
       WIDTH   => 32,                    -- parallel data width
@@ -1311,7 +1307,7 @@ BEGIN
     PORT MAP (
       O  => FMC_HPC_LA_P(12),  -- Diff_p output (connect directly to top-level port)
       OB => FMC_HPC_LA_N(12),  -- Diff_n output (connect directly to top-level port)
-      I  => spi_sync_n2
+      I  => spi_sync_n
     );
   ---------------------------------------------> shiftreg driver for DAC8568
   ---------------------------------------------< Sigma-Delta
