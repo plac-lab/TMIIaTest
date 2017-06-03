@@ -487,6 +487,8 @@ ARCHITECTURE wrapper OF gig_eth IS
   signal glbl_rst_int                       : std_logic;
   signal phy_reset_count                    : unsigned(5 downto 0) := (others => '0');
   signal glbl_rst_intn                      : std_logic;
+  signal dcm_status_locked                  : std_logic;
+  signal pcs_pma_status_rst                 : std_logic;
   --
   signal gmii_txd_int                       : std_logic_vector(7 downto 0);
   signal gmii_tx_en_int                     : std_logic;
@@ -642,11 +644,30 @@ BEGIN
     PORT MAP (
       FORCE_RST  => glbl_rst,
       CLK        => SYS_CLK,
-      DCM_LOCKED => dcm_locked,
+      DCM_LOCKED => dcm_status_locked,
       CLK_RST    => gclk_rst,
       GLOBAL_RST => grst
     );
   phy_resetn <= NOT gclk_rst;
+  -- check pcs_pma status once every 10 seconds and reset if necessary.
+  -- assuming sys_clk is 300MHz
+  dcm_status_locked <= dcm_locked AND (NOT pcs_pma_status_rst);
+  pcs_pma_status_reset_proc : PROCESS (SYS_CLK, glbl_rst) IS
+    VARIABLE cnt : unsigned(31 DOWNTO 0);
+  BEGIN  -- PROCESS pcs_pma_status_reset_proc
+    IF glbl_rst = '1' THEN              -- asynchronous reset
+      cnt                := to_unsigned(0, cnt'length);
+      pcs_pma_status_rst <= '0';
+    ELSIF rising_edge(SYS_CLK) THEN     -- rising clock edge
+      pcs_pma_status_rst <= '0';
+      IF cnt = x"b2d05e00" THEN
+        pcs_pma_status_rst <= NOT status_vector(7);
+        cnt                := to_unsigned(0, cnt'length);
+      ELSE
+        cnt := cnt + 1;
+      END IF;
+    END IF;
+  END PROCESS pcs_pma_status_reset_proc;
   ------------------------------------------------------------------------------
   -- Generate resets required for the fifo side signals etc
   ------------------------------------------------------------------------------

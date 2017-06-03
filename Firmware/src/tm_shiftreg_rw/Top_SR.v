@@ -66,7 +66,7 @@ IBUFDS #(.DIFF_TERM("TRUE"))
   .I(data_in_p),
   .IB(data_in_n)
   );
-  
+
 OBUFDS OBUFDS_inst1 (
   .I(data_out),
   .O(data_out_p),

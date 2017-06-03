@@ -3,9 +3,9 @@
 --! @brief Module for driving external shift registers such as SPI devices.
 --! @author Yuan Mei
 --!
---! By default the falling edge of SCLK is aligned at the center
---! of DOUT.  Invert SCLK ouput when necessary.  MSB of DATA is
---! shifted out first.
+--! By default DOUT is driven by the rising edge of SCLK and DIN is captured
+--! at falling edge of SCLK.
+--! MSB is shifted out or captured first.
 --------------------------------------------------------------------------------
 
 LIBRARY IEEE;
@@ -22,20 +22,27 @@ USE UNISIM.VComponents.ALL;
 
 ENTITY shiftreg_drive IS
   GENERIC (
-    WIDTH   : positive := 32;           -- parallel data width
-    CLK_DIV : natural  := 2             -- SCLK freq is CLK / 2**(CLK_DIV+1)
+    DATA_WIDTH        : positive  := 32; -- parallel data width
+    CLK_DIV_WIDTH     : positive  := 16;
+    DELAY_AFTER_SYNCn : natural   := 0;  -- number of SCLK cycles' wait after falling edge OF SYNCn
+    SCLK_IDLE_LEVEL   : std_logic := '0'; -- High or Low for SCLK when not switching
+    DOUT_DRIVE_EDGE   : std_logic := '1'; -- 1/0 rising/falling edge of SCLK drives new DOUT bit
+    DIN_CAPTURE_EDGE  : std_logic := '0'  -- 1/0 rising/falling edge of SCLK captures new DIN bit
   );
   PORT (
-    CLK   : IN  std_logic;              -- clock
-    RESET : IN  std_logic;              -- reset
-    -- input data interface
-    DATA  : IN  std_logic_vector(WIDTH-1 DOWNTO 0);
-    START : IN  std_logic;
-    BUSY  : OUT std_logic;
-    -- output
-    SCLK  : OUT std_logic;
-    DOUT  : OUT std_logic;
-    SYNCn : OUT std_logic
+    CLK     : IN  std_logic;            -- clock
+    RESET   : IN  std_logic;            -- reset
+    -- internal data interface
+    CLK_DIV : IN  std_logic_vector(CLK_DIV_WIDTH-1 DOWNTO 0);  -- SCLK freq is CLK / 2**(CLK_DIV)
+    DATAIN  : IN  std_logic_vector(DATA_WIDTH-1 DOWNTO 0);
+    START   : IN  std_logic;
+    BUSY    : OUT std_logic;
+    DATAOUT : OUT std_logic_vector(DATA_WIDTH-1 DOWNTO 0);
+    -- external serial interface
+    SCLK    : OUT std_logic;
+    DOUT    : OUT std_logic;
+    SYNCn   : OUT std_logic;
+    DIN     : IN  std_logic
   );
 END shiftreg_drive;
 
@@ -44,67 +51,127 @@ ARCHITECTURE Behavioral OF shiftreg_drive IS
   SIGNAL sclk_buf    : std_logic;
   SIGNAL dout_buf    : std_logic;
   SIGNAL sync_n_buf  : std_logic;
-  SIGNAL clk_cnt     : unsigned(CLK_DIV DOWNTO 0);
-  CONSTANT clk_cnt_p : unsigned(CLK_DIV DOWNTO 0) := ('1', OTHERS => '0');
-  SIGNAL data_reg    : std_logic_vector(WIDTH-1 DOWNTO 0);
-  SIGNAL data_pos    : integer RANGE 0 TO WIDTH;
+  SIGNAL clk_cnt     : unsigned(CLK_DIV_WIDTH-1 DOWNTO 0);
+  SIGNAL clk_cnt_p   : unsigned(CLK_DIV_WIDTH-1 DOWNTO 0);
+  SIGNAL delay_cnt   : unsigned(CLK_DIV_WIDTH-1 DOWNTO 0);
+  SIGNAL datain_reg  : std_logic_vector(DATA_WIDTH-1 DOWNTO 0);
+  SIGNAL datain_pos  : integer RANGE 0 TO DATA_WIDTH;
+  SIGNAL dataout_reg : std_logic_vector(DATA_WIDTH-1 DOWNTO 0);
+  SIGNAL dataout_pos : integer RANGE 0 TO DATA_WIDTH;
+  SIGNAL busy_buf    : std_logic;
   SIGNAL done        : std_logic;
+  SIGNAL done_prev   : std_logic;
   --
   TYPE driveState_t IS (S0, S1, S2);
   SIGNAL driveState  : driveState_t;
 
-BEGIN 
+BEGIN
 
   clk_proc: PROCESS (CLK, RESET)
   BEGIN
     IF RESET = '1' THEN
       clk_cnt <= to_unsigned(0, clk_cnt'length);
-    ELSIF rising_edge(CLK) THEN         -- rising clock edge
+    ELSIF rising_edge(CLK) THEN
       clk_cnt <= clk_cnt + 1;
     END IF;
   END PROCESS clk_proc;
-  sclk_buf <= clk_cnt(CLK_DIV);
+  sclk_buf <= CLK WHEN to_integer(unsigned(CLK_DIV)) = 0 ELSE
+              clk_cnt(to_integer(unsigned(CLK_DIV))-1);
 
-  data_proc : PROCESS (CLK, RESET)
+  PROCESS (CLK_DIV)
+  BEGIN
+    clk_cnt_p                                    <= (OTHERS => '0');
+    clk_cnt_p((to_integer(unsigned(CLK_DIV)))+1) <= '1';
+  END PROCESS;
+
+  -- latch START and data
+  PROCESS (CLK, RESET)
   BEGIN
     IF RESET = '1' THEN
-      BUSY       <= '0';
+      busy_buf  <= '0';
+      done_prev <= '1';
+    ELSIF rising_edge(CLK) THEN
+      IF done = '1' THEN
+        IF done_prev = '0' THEN         -- release busy on rising edge of done
+          busy_buf <= '0';
+        ELSIF START = '1' THEN          -- latch START when done is stable
+          busy_buf   <= '1';
+          datain_reg <= DATAIN;
+        END IF;
+      END IF;
+      done_prev <= done;
+    END IF;
+  END PROCESS;
+
+  dout_proc : PROCESS (sclk_buf, RESET)
+  BEGIN
+    IF RESET = '1' THEN
       driveState <= S0;
       sync_n_buf <= '1';
-    ELSIF rising_edge(CLK) THEN
+      done       <= '1';
+    ELSIF (sclk_buf'event AND sclk_buf = DOUT_DRIVE_EDGE) THEN
       CASE driveState IS
         WHEN S0 =>
           sync_n_buf <= '1';
-          IF START = '1' THEN           -- START is level triggered
-            BUSY       <= '1';
-            data_reg   <= DATA;         -- register DATA
-            data_pos   <= WIDTH;
-            driveState <= S1;
+          IF busy_buf = '1' THEN
+            sync_n_buf <= '0';
+            done       <= '0';
+            IF DELAY_AFTER_SYNCn > 0 THEN
+              delay_cnt  <= to_unsigned(1, delay_cnt'length);
+              driveState <= S1;
+            ELSE
+              dout_buf   <= datain_reg(DATA_WIDTH-1);
+              datain_pos <= DATA_WIDTH - 1;
+              driveState <= S2;
+            END IF;
           END IF;
 
         WHEN S1 =>
           driveState <= S1;
-          IF clk_cnt = clk_cnt_p-1 THEN -- rising_edge of sclk
-            sync_n_buf <= '0';
-            IF data_pos > 0 THEN 
-              dout_buf <= data_reg(data_pos-1);
-              data_pos <= data_pos - 1;                
-            ELSE
-              sync_n_buf <= '1';
-              BUSY       <= '0';
-              driveState <= S0;
-            END IF;
+          IF to_integer(delay_cnt) >= DELAY_AFTER_SYNCn THEN
+            dout_buf   <= datain_reg(DATA_WIDTH-1);
+            datain_pos <= DATA_WIDTH - 1;
+            driveState <= S2;
+          END IF;
+          delay_cnt <= delay_cnt + 1;
+
+        WHEN S2 =>
+          driveState <= S2;
+          IF datain_pos > 0 THEN
+            dout_buf   <= datain_reg(datain_pos-1);
+            datain_pos <= datain_pos - 1;
+          ELSE
+            sync_n_buf <= '1';
+            done       <= '1';
+            driveState <= S0;
           END IF;
           
         WHEN OTHERS =>
           driveState <= S0;
       END CASE;
     END IF;
-  END PROCESS data_proc;
+  END PROCESS dout_proc;
+
+  din_proc : PROCESS (sclk_buf, RESET)
+  BEGIN
+    IF RESET = '1' THEN
+      dataout_pos <= DATA_WIDTH;
+    ELSIF (sclk_buf'event AND sclk_buf = DIN_CAPTURE_EDGE) THEN
+      IF driveState = S2 THEN
+        dataout_reg(dataout_pos - 1) <= DIN;
+        dataout_pos                  <= dataout_pos - 1;
+      ELSE
+        dataout_pos <= DATA_WIDTH;
+      END IF;
+    END IF;
+  END PROCESS din_proc;
 
   -- output
-  SCLK  <= sclk_buf OR sync_n_buf;
-  SYNCn <= sync_n_buf;
-  DOUT  <= dout_buf;
-  
+  SCLK    <= sclk_buf WHEN (driveState = S2 AND dataout_pos > 0) ELSE SCLK_IDLE_LEVEL;
+  SYNCn   <= sync_n_buf;                     -- half-SCLK early to remove glitch
+  DOUT    <= dout_buf;
+  --
+  BUSY    <= busy_buf;
+  DATAOUT <= dataout_reg;
+
 END Behavioral;
