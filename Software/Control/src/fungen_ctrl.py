@@ -5,6 +5,7 @@
 # Control the function generator
 #
 
+from __future__ import print_function
 import time
 import os
 import sys
@@ -17,7 +18,7 @@ except:
     import visa
 
 ## Rigol DG1022
-class DG1022:
+class DG1022(object):
 
     ## @var handle to instrument
     _instr = None
@@ -81,7 +82,7 @@ class DG1022:
 if __name__ == "__main__":
 
     fg = DG1022()
-    fg.set_voltage(0.0, 1.0)
+    fg.set_voltage(0.0, 0.1)
     fg.setup_tail_pulse(100, 64, 1024, 0.01)
     fg.turn_on_output()
     fg.close()

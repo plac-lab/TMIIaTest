@@ -5,6 +5,7 @@
 # Human interface for tuning the Topmetal-S 1mm version chip
 #
 
+from __future__ import print_function
 import Tkinter as tk
 import threading
 import math,sys,time,os,shutil
@@ -12,7 +13,7 @@ import socket
 from command import *
 import TMS1mmSingle
 
-class CommonData:
+class CommonData(object):
 
     def __init__(self, tms1mmReg):
         # number of voltages to control
@@ -24,7 +25,7 @@ class CommonData:
         self.quit = False
         self.vUpdated = False
 
-        self.voltsNames = ['VBIASN', 'VBIASP', 'VCASN', 'VCASP', 'VDIS', 'VREF', 'VREF1.2']
+        self.voltsNames = ['VBIASN', 'VBIASP', 'VCASN', 'VCASP', 'VDIS', 'VREF', 'DAC_BufferX2_VREF']
         self.inputVs = [1.38, 1.55, 1.45, 1.35, 1.58, 2.68, 1.2]
         self.inputVcodes = [0 for i in xrange(self.nVolts)]
 
@@ -33,7 +34,7 @@ class CommonData:
 
         self.tms1mmReg = tms1mmReg
 
-class ControlPanelGUI:
+class ControlPanelGUI(object):
 
     def __init__(self, master, cd):
         self.master = master
@@ -115,8 +116,8 @@ class ControlPanelGUI:
                 self.cd.inputVcodes[i] = self.cd.tms1mmReg.dac_volt2code(self.cd.inputVs[i])
                 self.voltsSetCodeVars[i].set(self.cd.inputVcodes[i])
             self.cd.vUpdated = True
-            print self.cd.inputVs
-            print self.cd.inputVcodes
+            print(self.cd.inputVs)
+            print(self.cd.inputVcodes)
         return True
 
     def set_voltage_dac_code_update(self, *args):
@@ -126,7 +127,7 @@ class ControlPanelGUI:
                 self.cd.inputVs[i] = self.cd.tms1mmReg.dac_code2volt(self.cd.inputVcodes[i])
                 self.voltsSetVars[i].set(self.cd.inputVs[i])
             self.cd.vUpdated = True
-            print self.cd.inputVcodes
+            print(self.cd.inputVcodes)
         return True
 
 class TMS1mmConfig(threading.Thread):
@@ -177,19 +178,28 @@ class TMS1mmConfig(threading.Thread):
         else:
             self.tms1mmReg.set_k(5, 0)
 
+        s.sendall(dac8568.turn_on_2V5_ref())
+        s.sendall(dac8568.set_voltage(7, 1.65)) # DAC_CH8 -> Ref2 1.65V
+
         self.tms1mmReg.set_k(6, 1) # 1 - K7 is closed, BufferX2 output to AOUT_BufferX2
         self.tms1mmReg.set_k(7, 1) # 1 - K8 is closed, connect CSA out to AOUT1_CSA
-        self.tms1mmReg.set_dac(0, self.cd.inputVcodes[0]) # VBIASN R45
-        self.tms1mmReg.set_dac(1, self.cd.inputVcodes[1]) # VBIASP R47
-        self.tms1mmReg.set_dac(2, self.cd.inputVcodes[2]) # VCASN  R29
-        self.tms1mmReg.set_dac(3, self.cd.inputVcodes[3]) # VCASP  R27
-        # self.tms1mmReg.set_dac(4, self.cd.inputVcodes[4]) # VDIS   R16, use external DAC
+        self.tms1mmReg.set_dac(0, self.cd.inputVcodes[0]) # VBIASN
+        s.sendall(dac8568.set_voltage(0, self.cd.inputVs[0]))
+        self.tms1mmReg.set_dac(1, self.cd.inputVcodes[1]) # VBIASP
+        s.sendall(dac8568.set_voltage(1, self.cd.inputVs[1]))
+        self.tms1mmReg.set_dac(2, self.cd.inputVcodes[2]) # VCASN
+        s.sendall(dac8568.set_voltage(2, self.cd.inputVs[2]))
+        self.tms1mmReg.set_dac(3, self.cd.inputVcodes[3]) # VCASP
+        s.sendall(dac8568.set_voltage(3, self.cd.inputVs[3]))
+        self.tms1mmReg.set_dac(4, self.cd.inputVcodes[4]) # VDIS
         s.sendall(dac8568.set_voltage(4, self.cd.inputVs[4]))
-        self.tms1mmReg.set_dac(5, self.cd.inputVcodes[5]) # VREF   R14
-        s.sendall(dac8568.set_voltage(6, self.cd.inputVs[6])) # VREF1.2 R24 or R25 left
+        self.tms1mmReg.set_dac(5, self.cd.inputVcodes[5]) # VREF
+        s.sendall(dac8568.set_voltage(5, self.cd.inputVs[5]))
+        #
+        s.sendall(dac8568.set_voltage(6, self.cd.inputVs[6])) # DAC_BufferX2_VREF
 
         data_to_send = self.tms1mmReg.get_config_vector()
-        print "Sent:   0x%0x" % (data_to_send)
+        print("Sent:   0x%0x" % (data_to_send))
         div=7
         TMS1mmSingle.shift_register_rw(self.s, (data_to_send), div)
 
@@ -208,8 +218,8 @@ if __name__ == "__main__":
     s.sendall(dac8568.turn_on_2V5_ref())
     s.sendall(dac8568.set_voltage(6, 1.2))
 
-    # enable SDM clock
-    s.sendall(cmd.write_register(9, 0x01))
+    # enable/disable SDM clock
+    s.sendall(cmd.write_register(9, 0x02))
 
     root = tk.Tk()
     root.wm_title("Topmetal-S 1mm version Tuner")

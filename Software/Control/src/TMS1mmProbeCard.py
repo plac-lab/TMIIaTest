@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-## @package TMS1mmSingle
-# Control module for the Topmetal-S 1mm Electrode single-chip test.
+## @package TMS1mmProbeCard
+# Control module for the Topmetal-S 1mm Electrode probe card.
 #
 
 from __future__ import print_function
@@ -104,7 +104,110 @@ class DAC8568(object):
         return self.write_spi(0x08000001)
     def set_voltage(self, ch, v):
         return self.write_spi((0x03 << 24) | (ch << 20) | (self.DACVolt(v) << 4))
- 
+
+## Command generator for controlling ADS124S0X
+#
+class ADS124S0X(object):
+
+    def __init__(self, cmd, pulseId=2, configRegId=0, statusRegId0=9, acqDelay=0.2):
+        self._pulseId = pulseId
+        self._configRegId = configRegId
+        self._statusRegId0 = 9
+        # time to wait for ADC to finish a sample
+        self.acqDelay = acqDelay
+        self.cmd = cmd
+
+    def write_spi(self, val):
+        ret = "" # 32 bits
+        ret += self.cmd.write_register(self._configRegId, (val >> 16) & 0xffff)
+        ret += self.cmd.send_pulse(self._pulseId)
+        ret += self.cmd.write_register(self._configRegId, val & 0xffff)
+        ret += self.cmd.send_pulse(self._pulseId)
+        return ret
+
+    def read_reg(self, addr, n=2):
+        rreg = (1<<5) | (0x1f & addr)
+        if n == 0: n = 1
+        nreg = 0x1f & (n-1)
+        val = (rreg << 24) | (nreg << 16)
+        return self.write_spi(val)
+
+    def write_reg(self, addr, d1, d2=0, n=1):
+        wreg = (1<<6) | (0x1f & addr)
+        if n == 0: n = 1
+        if n > 2 : n = 2
+        nreg = 0x1f & (n-1)
+        val = (wreg << 24) | (nreg << 16) | d1 << 8 | d2
+        return self.write_spi(val)
+
+    def initialize(self):
+        cmdstr  = ""
+        cmdstr += self.write_reg(0x04, 0x14, # Low-latency filter, 20SPS
+                                       0x3a, # Internal 2.5V reference
+                                 n=2)
+        cmdstr += self.write_spi(0x08<<24) # START
+        return cmdstr
+
+    def select_channel(self, ch):
+        cmdstr = ""
+        if ch == -1: # temperature sensor or internal check sources
+            cmdstr += self.write_reg(0x09, 0x50) # SYS_MON, temperature, 129mV @25C
+            #cmdstr += self.write_reg(0x09, 0x90) # SYS_MON, DVDD/4.0
+            #cmdstr += self.write_reg(0x09, 0x70) # SYS_MON, (AVDD-AVSS)/4.0
+            cmdstr += self.write_reg(0x03, 0x08) # PGA_EN, GAIN 1
+        else:
+            cmdstr += self.write_reg(0x09, 0x10) # SYS_MON, disable
+            cmdstr += self.write_reg(0x03, 0x00) # PGA_EN, PGA disabled.
+            cmdstr += self.write_reg(0x02, ((0x0f & ch)<<4) | 0x0c) # tie MUXP=AIN[ch], MUXN=AINCOM
+        return cmdstr
+
+    def restart(self):
+        cmdstr = self.write_spi(0x0a<<24) # STOP
+        cmdstr += self.write_spi(0x08<<24) # START
+        return cmdstr
+
+    ## Methods start with recv_ will take an open socket s and actually perform communication.
+    # Read captured din from status_reg
+    #
+    def recv_din(self, s, n16=2, delay=0.001):
+        cmdstr = ""
+        for i in xrange(n16):
+            cmdstr += self.cmd.read_status(self._statusRegId0+i)
+        time.sleep(delay) # wait for status_reg to be ready
+        s.sendall(cmdstr)
+        retw = s.recv(4*n16)
+        ret = 0
+        for i in xrange(n16):
+            ret |= (ord(retw[i*4+2]) << (i*16 + 8)) | (ord(retw[i*4+3]) << i*16)
+        return ret
+
+    def recv_data(self, s):
+        rdata = 0x12
+        val = rdata << 24
+        s.sendall(self.write_spi(val))
+        return self.recv_din(s)
+
+    ## Convert received adc data to voltage
+    #
+    def adcvolt(self, data, vn=0.0, gain=1, vref=2.5, mode="single"):
+        adccode = 0xffffff & data
+        sign = adccode >> 23
+        if sign == 0:
+            adcint = adccode
+        else: # negative, 2's complement
+            adcint = adccode - (1<<24)
+        if mode == "single":
+            gain = gain * 0.5
+        volt = adcint * vref / (1<<24) / gain + vn
+        return volt
+
+    ## Convert received adc data to internal sensor temperature
+    #
+    def adctemp(self, data):
+        v = self.adcvolt(data)
+        c = 25.0 + (v - 0.129) / 0.000403
+        return c
+
 ## Shift_register write and read function.
 #
 # @param[in] s Socket that is already open and connected to the FPGA board.
@@ -156,11 +259,11 @@ if __name__ == "__main__":
 
     cmd = Cmd()
     dac8568 = DAC8568(cmd)
-    s.sendall(dac8568.turn_on_2V5_ref())
-    s.sendall(dac8568.set_voltage(6, 1.2))
+#    s.sendall(dac8568.turn_on_2V5_ref())
+#    s.sendall(dac8568.set_voltage(6, 1.2))
 
     # enable SDM clock
-    s.sendall(cmd.write_register(9, 0x01))
+#    s.sendall(cmd.write_register(9, 0x01))
 
     x2gain = 2
     bufferTest = True
@@ -194,13 +297,34 @@ if __name__ == "__main__":
     tms1mmReg.set_dac(2, tms1mmReg.dac_volt2code(1.45)) # VCASN  R29
     tms1mmReg.set_dac(3, tms1mmReg.dac_volt2code(1.35)) # VCASP  R27
     # tms1mmReg.set_dac(4, dac_volt2code(1.58)) # VDIS   R16, use external DAC
-    s.sendall(dac8568.set_voltage(4, 1.58))
+    #s.sendall(dac8568.set_voltage(4, 1.58))
     tms1mmReg.set_dac(5, tms1mmReg.dac_volt2code(2.68)) # VREF   R14
 
     data_to_send = tms1mmReg.get_config_vector()
     print("Sent: 0x%0x" % (data_to_send))
 
     div=7
-    shift_register_rw(s, (data_to_send), div)
+    #shift_register_rw(s, (data_to_send), div)
+
+    adc = ADS124S0X(cmd)
+    # reset
+    s.sendall(adc.write_spi(0x06<<24))
+    time.sleep(0.005) # > 4096*(tCLK = 4.096MHz)
+    # initialize
+    s.sendall(adc.initialize())
+    # get data
+    for ch in xrange(-1, 12):
+        # select channel
+        s.sendall(adc.select_channel(ch))
+        time.sleep(adc.acqDelay)
+        # read reg
+        ret = adc.read_reg(0x02)
+        s.sendall(ret)
+        val = adc.recv_din(s)
+        print("ch={:2d} 0x{:08x}".format(ch, val))
+        # RDATA
+        val = adc.recv_data(s)
+        c = "{:7.3f}C".format(adc.adctemp(val)) if ch == -1 else ""
+        print("0x{:08x} {:d} {:12.9f}V {}".format(val, val&0xffffff, adc.adcvolt(val), c))
 
     s.close()

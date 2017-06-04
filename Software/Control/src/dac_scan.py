@@ -4,6 +4,7 @@
 # Scan DAC input code and measure output voltage using HP34401A
 #
 
+from __future__ import print_function
 import copy
 import socket
 import time
@@ -13,7 +14,7 @@ from command import *
 from TMS1mmSingle import *
 
 ## HP34401A multimeter control
-class HP34401A:
+class HP34401A(object):
 
     ## Initialization
     # @param s An already open serial object to talk to the device.
@@ -61,7 +62,7 @@ class HP34401A:
             self._s.write("*TRG\n")
             self._numTaken += 1
         else:
-            print "Maximum number of data points %d reached\n" % self._numMax
+            print("Maximum number of data points %d reached\n" % self._numMax)
 
     def get_points_taken(self):
         time.sleep(1)
@@ -79,10 +80,10 @@ if __name__ == "__main__":
     ser = serial.Serial('/dev/tty.usbserial-FT0CWADV',
                         9600, 8, serial.PARITY_NONE, serial.STOPBITS_TWO,
                         timeout=10)
-    print ser
+    print(ser)
     dmm = HP34401A(ser)
-    print dmm.identify()
-    print dmm.setup_measurement()
+    print(dmm.identify())
+    print(dmm.setup_measurement())
 
     host = '192.168.2.3'
     port = 1024
@@ -123,10 +124,10 @@ if __name__ == "__main__":
         dmm.set_trigger_then_arm()
         for j in xrange(dmm._numMax):
             dacVal = (i*dmm._numMax + j) * stepsize
-            print "sample id = %d, dacVal = %d, 0x%04x" % (j, dacVal, dacVal)
+            print("sample id = %d, dacVal = %d, 0x%04x" % (j, dacVal, dacVal))
             tms1mmReg.set_dac(2, dacVal)
             data_to_send = tms1mmReg.get_config_vector()
-            print "Sent to SR: 0x%0x" % (data_to_send)
+            print("Sent to SR: 0x%0x" % (data_to_send))
             shift_register_rw(sock, (data_to_send), div)
             dmm.measure_one_point()
         dmm.get_points_taken()

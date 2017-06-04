@@ -1,7 +1,7 @@
+from __future__ import print_function
 from ctypes import *
 
-
-class Cmd:
+class Cmd(object):
     soname = "./build/command.so"
     nmax = 20000
 
@@ -61,5 +61,5 @@ class Cmd:
 if __name__ == "__main__":
     cmd = Cmd()
     ret = cmd.write_register(1, 0x5a5a)
-    print [hex(ord(s)) for s in ret]
+    print([hex(ord(s)) for s in ret])
 
