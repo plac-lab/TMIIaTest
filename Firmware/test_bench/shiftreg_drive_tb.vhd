@@ -132,6 +132,7 @@ BEGIN
     SYNCn   => SYNCn,
     DIN     => DIN
   );
+  DIN <= DOUT;
 
   fifo : fifo16to32
     PORT MAP (
@@ -147,10 +148,19 @@ BEGIN
     );
 
   START      <= NOT fifo_empty;
-  fifo_rd_en <= NOT BUSY;
-  DIN        <= DOUT;
+  -- rising edge of busy
+  rd_es : edge_sync
+    GENERIC MAP (
+      EDGE => '1'  -- '1'  :  rising edge,  '0' falling edge
+    )
+    PORT MAP (
+      RESET => RESET,
+      CLK   => CLK,
+      EI    => BUSY,
+      SO    => fifo_rd_en
+    );
 
-  es : edge_sync
+  wr_es : edge_sync
     GENERIC MAP (
       EDGE => '1'  -- '1'  :  rising edge,  '0' falling edge
     )
@@ -192,12 +202,23 @@ BEGIN
     WAIT FOR CLK_period*3;
     wr_start <= '0';
 
-    WAIT FOR 2100ns;
+    WAIT FOR 20ns;
     fifo_din <= x"abcd";
     wr_start <= '1';
     WAIT FOR CLK_period*3;
     wr_start <= '0';
     fifo_din <= x"1234";
+    WAIT FOR CLK_period;
+    wr_start <= '1';
+    WAIT FOR CLK_period*3;
+    wr_start <= '0';
+
+    WAIT FOR 1100ns;
+    fifo_din <= x"4321";
+    wr_start <= '1';
+    WAIT FOR CLK_period*3;
+    wr_start <= '0';
+    fifo_din <= x"dcba";
     WAIT FOR CLK_period;
     wr_start <= '1';
     WAIT FOR CLK_period*3;

@@ -102,15 +102,15 @@ ARCHITECTURE Behavioral OF fifo2shiftreg IS
     );
   END COMPONENT;
   --
-  SIGNAL sd_start   : std_logic;
-  SIGNAL sd_busy    : std_logic;
+  SIGNAL sd_start     : std_logic;
+  SIGNAL sd_busy      : std_logic;
   --
-  SIGNAL fifo_dout  : std_logic_vector(31 DOWNTO 0);
-  SIGNAL fifo_wr_en : std_logic;
-  SIGNAL fifo_rd_en : std_logic;
-  SIGNAL fifo_empty : std_logic;
+  SIGNAL fifo_dout    : std_logic_vector(31 DOWNTO 0);
+  SIGNAL fifo_wr_en   : std_logic;
+  SIGNAL fifo_rd_en   : std_logic;
+  SIGNAL fifo_empty   : std_logic;
   --
-  SIGNAL es_so      : std_logic;
+  SIGNAL es_so        : std_logic;
 
 BEGIN 
 
@@ -154,9 +154,19 @@ BEGIN
     );
 
   sd_start   <= NOT fifo_empty;
-  fifo_rd_en <= NOT sd_busy;
+  -- rising edge of busy
+  rd_es : edge_sync
+    GENERIC MAP (
+      EDGE => '1'  -- '1'  :  rising edge,  '0' falling edge
+    )
+    PORT MAP (
+      RESET => RESET,
+      CLK   => CLK,
+      EI    => sd_busy,
+      SO    => fifo_rd_en
+    );
 
-  es : edge_sync
+  wr_es : edge_sync
     GENERIC MAP (
       EDGE => '1'  -- '1'  :  rising edge,  '0' falling edge
     )

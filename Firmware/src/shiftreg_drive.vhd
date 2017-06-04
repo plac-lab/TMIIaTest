@@ -59,6 +59,7 @@ ARCHITECTURE Behavioral OF shiftreg_drive IS
   SIGNAL dataout_reg : std_logic_vector(DATA_WIDTH-1 DOWNTO 0);
   SIGNAL dataout_pos : integer RANGE 0 TO DATA_WIDTH;
   SIGNAL busy_buf    : std_logic;
+  SIGNAL busy_prev   : std_logic;
   SIGNAL done        : std_logic;
   SIGNAL done_prev   : std_logic;
   --
@@ -88,18 +89,24 @@ BEGIN
   PROCESS (CLK, RESET)
   BEGIN
     IF RESET = '1' THEN
-      busy_buf  <= '0';
-      done_prev <= '1';
+      busy_buf   <= '0';
+      busy_prev  <= '0';
+      done_prev  <= '1';
+      datain_reg <= (OTHERS => '0');
     ELSIF rising_edge(CLK) THEN
+      busy_prev <= busy_buf;
+      done_prev <= done;
       IF done = '1' THEN
         IF done_prev = '0' THEN         -- release busy on rising edge of done
-          busy_buf <= '0';
+          busy_buf  <= '0';
+          busy_prev <= '0';
         ELSIF START = '1' THEN          -- latch START when done is stable
-          busy_buf   <= '1';
-          datain_reg <= DATAIN;
+          busy_buf <= '1';
+          IF busy_prev = '0' THEN       -- latch DATAIN on rise of busy
+            datain_reg <= DATAIN;
+          END IF;
         END IF;
       END IF;
-      done_prev <= done;
     END IF;
   END PROCESS;
 
@@ -156,6 +163,7 @@ BEGIN
   BEGIN
     IF RESET = '1' THEN
       dataout_pos <= DATA_WIDTH;
+      dataout_reg <= (OTHERS => '0');
     ELSIF (sclk_buf'event AND sclk_buf = DIN_CAPTURE_EDGE) THEN
       IF driveState = S2 THEN
         dataout_reg(dataout_pos - 1) <= DIN;
