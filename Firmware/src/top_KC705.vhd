@@ -304,22 +304,31 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------< shiftreg driver for DAC8568
   COMPONENT fifo2shiftreg
     GENERIC (
-      WIDTH   : positive := 32;         -- parallel data width
-      CLK_DIV : natural  := 2           -- SCLK freq is CLK / 2**(CLK_DIV)
+      DATA_WIDTH        : positive  := 32;  -- parallel data width
+      CLK_DIV_WIDTH     : positive  := 16;
+      DELAY_AFTER_SYNCn : natural   := 0;  -- number of SCLK cycles' wait after falling edge OF SYNCn
+      SCLK_IDLE_LEVEL   : std_logic := '0';  -- High or Low for SCLK when not switching
+      DOUT_DRIVE_EDGE   : std_logic := '1';  -- 1/0 rising/falling edge of SCLK drives new DOUT bit
+      DIN_CAPTURE_EDGE  : std_logic := '0'  -- 1/0 rising/falling edge of SCLK captures new DIN bit
     );
     PORT (
       CLK      : IN  std_logic;         -- clock
       RESET    : IN  std_logic;         -- reset
       -- input data interface
       WR_CLK   : IN  std_logic;         -- FIFO write clock
-      DIN      : IN  std_logic_vector(15 DOWNTO 0);
+      DINFIFO  : IN  std_logic_vector(15 DOWNTO 0);
       WR_EN    : IN  std_logic;
       WR_PULSE : IN  std_logic;  -- one pulse writes one word, regardless of pulse duration
       FULL     : OUT std_logic;
-      -- output
+      -- captured data
+      BUSY     : OUT std_logic;
+      DATAOUT  : OUT std_logic_vector(DATA_WIDTH-1 DOWNTO 0);
+      -- serial interface
+      CLK_DIV  : IN  std_logic_vector(CLK_DIV_WIDTH-1 DOWNTO 0);  -- SCLK freq is CLK / 2**(CLK_DIV)
       SCLK     : OUT std_logic;
       DOUT     : OUT std_logic;
-      SYNCn    : OUT std_logic
+      SYNCn    : OUT std_logic;
+      DIN      : IN  std_logic
     );
   END COMPONENT;
   ---------------------------------------------> shiftreg driver for DAC8568
@@ -746,7 +755,8 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------> PULSE_SYNCHRONISE
   ---------------------------------------------< shiftreg driver for DAC8568
   SIGNAL spi_sclk                          : std_logic;
-  SIGNAL spi_data                          : std_logic;
+  SIGNAL spi_dout                          : std_logic;
+  SIGNAL spi_din                           : std_logic;
   SIGNAL spi_sync_n                        : std_logic;
   SIGNAL spi_sync_n1                       : std_logic;
   SIGNAL spi_sync_n2                       : std_logic;  
@@ -1329,40 +1339,49 @@ BEGIN
   spi_sync_n2 <= spi_sync_n WHEN config_reg(16) = '1' ELSE '1';   
   dac8568_inst : fifo2shiftreg
     GENERIC MAP (
-      WIDTH   => 32,                    -- parallel data width
-      CLK_DIV => 2                      -- SCLK freq is CLK / 2**(CLK_DIV+1)
+      DATA_WIDTH        => 32,          -- parallel data width
+      CLK_DIV_WIDTH     => 16,
+      DELAY_AFTER_SYNCn => 0,  -- number of SCLK cycles' wait after falling edge OF SYNCn
+      SCLK_IDLE_LEVEL   => '0',  -- High or Low for SCLK when not switching
+      DOUT_DRIVE_EDGE   => '1',  -- 1/0 rising/falling edge of SCLK drives new DOUT bit
+      DIN_CAPTURE_EDGE  => '0'  -- 1/0 rising/falling edge of SCLK captures new DIN bit
     )
-    PORT MAP (
+    PORT MAP ( 
       CLK      => control_clk,          -- clock
       RESET    => reset,                -- reset
       -- input data interface
       WR_CLK   => control_clk,          -- FIFO write clock
-      DIN      => config_reg(15 DOWNTO 0),
+      DINFIFO  => config_reg(15 DOWNTO 0),
       WR_EN    => '0',
       WR_PULSE => pulse_reg(1),  -- one pulse writes one word, regardless of pulse duration
       FULL     => OPEN,
-      -- output
+      -- captured data
+      BUSY     => status_reg(16*9-1),
+      DATAOUT  => status_reg(16*9+31 DOWNTO 16*9),
+      -- serial interface
+      CLK_DIV  => x"0002",
       SCLK     => spi_sclk,
-      DOUT     => spi_data,
-      SYNCn    => spi_sync_n
+      DOUT     => spi_dout,
+      SYNCn    => spi_sync_n,
+      DIN      => spi_din
     );
   spi_sclk_obufds_inst : OBUFDS
     GENERIC MAP (
       IOSTANDARD => "LVDS"
     )
     PORT MAP (
-      O  => FMC_HPC_LA_P(13),  -- Diff_p output (connect directly to top-level port)
-      OB => FMC_HPC_LA_N(13),  -- Diff_n output (connect directly to top-level port)
+      O  => FMC_HPC_LA_P(14),  -- Diff_p output (connect directly to top-level port)
+      OB => FMC_HPC_LA_N(14),  -- Diff_n output (connect directly to top-level port)
       I  => spi_sclk
     );
-  spi_data_obufds_inst : OBUFDS
+  spi_dout_obufds_inst : OBUFDS
     GENERIC MAP (
       IOSTANDARD => "LVDS"
     )
     PORT MAP (
-      O  => FMC_HPC_LA_P(14),  -- Diff_p output (connect directly to top-level port)
-      OB => FMC_HPC_LA_N(14),  -- Diff_n output (connect directly to top-level port)
-      I  => spi_data
+      O  => FMC_HPC_LA_P(13),  -- Diff_p output (connect directly to top-level port)
+      OB => FMC_HPC_LA_N(13),  -- Diff_n output (connect directly to top-level port)
+      I  => spi_dout
     );
   spi_sync_n1_obufds_inst : OBUFDS
     GENERIC MAP (
