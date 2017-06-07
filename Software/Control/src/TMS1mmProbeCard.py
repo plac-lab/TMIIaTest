@@ -89,16 +89,17 @@ class TMS1mmReg(object):
 #
 class DAC8568(object):
  
-    def __init__(self, cmd):
+    def __init__(self, cmd, pulseId=1):
+        self._pulseId = pulseId
         self.cmd = cmd
     def DACVolt(self, x):
         return int(x / 2.5 * 65536.0)    #calculation
     def write_spi(self, val):
         ret = ""          # 32 bits 
         ret += self.cmd.write_register(0, (val >> 16) & 0xffff)
-        ret += self.cmd.send_pulse(2)
+        ret += self.cmd.send_pulse(1<<self._pulseId)
         ret += self.cmd.write_register(0, val & 0xffff)
-        ret += self.cmd.send_pulse(2)
+        ret += self.cmd.send_pulse(1<<self._pulseId)
         return ret
     def turn_on_2V5_ref(self):
         return self.write_spi(0x08000001)
@@ -120,9 +121,9 @@ class ADS124S0X(object):
     def write_spi(self, val):
         ret = "" # 32 bits
         ret += self.cmd.write_register(self._configRegId, (val >> 16) & 0xffff)
-        ret += self.cmd.send_pulse(self._pulseId)
+        ret += self.cmd.send_pulse(1<<self._pulseId)
         ret += self.cmd.write_register(self._configRegId, val & 0xffff)
-        ret += self.cmd.send_pulse(self._pulseId)
+        ret += self.cmd.send_pulse(1<<self._pulseId)
         return ret
 
     def read_reg(self, addr, n=2):

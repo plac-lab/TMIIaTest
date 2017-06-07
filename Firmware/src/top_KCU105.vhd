@@ -658,8 +658,8 @@ BEGIN
       WR_PULSE => pulse_reg(1),  -- one pulse writes one word, regardless of pulse duration
       FULL     => OPEN,
       -- captured data
-      BUSY     => status_reg(16*9-1),
-      DATAOUT  => status_reg(16*9+31 DOWNTO 16*9),
+      BUSY     => OPEN,
+      DATAOUT  => OPEN,
       -- serial interface
       CLK_DIV  => x"0002",
       SCLK     => spi_sclk,
@@ -672,8 +672,8 @@ BEGIN
       IOSTANDARD => "LVDS"
     )
     PORT MAP (
-      O  => FMC_HPC_LA_P(14),  -- Diff_p output (connect directly to top-level port)
-      OB => FMC_HPC_LA_N(14),  -- Diff_n output (connect directly to top-level port)
+      O  => FMC_HPC_LA_P(13),  -- Diff_p output (connect directly to top-level port)
+      OB => FMC_HPC_LA_N(13),  -- Diff_n output (connect directly to top-level port)
       I  => spi_sclk
     );
   spi_dout_obufds_inst : OBUFDS
@@ -681,8 +681,8 @@ BEGIN
       IOSTANDARD => "LVDS"
     )
     PORT MAP (
-      O  => FMC_HPC_LA_P(13),  -- Diff_p output (connect directly to top-level port)
-      OB => FMC_HPC_LA_N(13),  -- Diff_n output (connect directly to top-level port)
+      O  => FMC_HPC_LA_P(14),  -- Diff_p output (connect directly to top-level port)
+      OB => FMC_HPC_LA_N(14),  -- Diff_n output (connect directly to top-level port)
       I  => spi_dout
     );
   spi_sync_n1_obufds_inst : OBUFDS
