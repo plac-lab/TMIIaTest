@@ -10,6 +10,8 @@ import copy
 from command import *
 import socket
 import time
+import sys
+import argparse
 
 ## Manage Topmetal-S 1mm chip's internal register map.
 # Allow combining and disassembling individual registers
@@ -209,7 +211,30 @@ class ADS124S0X(object):
         c = 25.0 + (v - 0.129) / 0.000403
         return c
 
-## Shift_register write and read function.
+## Class for controlling Keithley 2450 SMU
+#
+class SMU2450(object):
+
+    def __init__(self, ipaddr="192.168.2.100", ipport=5025):
+        self._ipaddr = ipaddr
+        self._ipport = ipport
+
+    def volt_on(self, v=7.0, iLimit=0.2):
+        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        s.connect((self._ipaddr, self._ipport))
+        s.sendall(":ABORT\n:TRIG:LOAD \"EMPTY\"\n")
+        s.sendall(":SENS:FUNC \"CURR:DC\"\n:SENS:CURR:RANG:AUTO ON\n:SENS:CURR:RSEN OFF\n")
+        s.sendall(":SOUR:FUNC VOLT\n:SOUR:VOLT {0:f}\n:SOUR:VOLT:ILIM {1:f}\n".format(v, iLimit))
+        s.sendall(":OUTP ON\n:TRIG:LOAD \"LoopUntilEvent\", COMM, 100\n:INIT\n")
+        s.close()
+    def volt_off(self):
+        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        s.connect((self._ipaddr, self._ipport))
+        s.sendall(":ABORT\n:TRIG:LOAD \"EMPTY\"\n")
+        s.sendall(":OUTP OFF\n:TRIG:LOAD \"LoopUntilEvent\", COMM, 100\n:INIT\n")
+        s.close()
+
+ ## Shift_register write and read function.
 #
 # @param[in] s Socket that is already open and connected to the FPGA board.
 # @param[in] data_to_send 130-bit value to be sent to the external SR.
@@ -233,7 +258,7 @@ def shift_register_rw(s, data_to_send, clk_div):
 
     s.sendall(cmdstr)
 
-    time.sleep(0.5)
+    time.sleep(0.2)
 
     # read back
     cmdstr = ""
@@ -253,15 +278,37 @@ def shift_register_rw(s, data_to_send, clk_div):
 
 if __name__ == "__main__":
 
-    host = '192.168.2.3'
-    port = 1024
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--smu-ip-port", type=str, default="192.168.2.100:5025", help="SMU 2450 ipaddr and port")
+    parser.add_argument("-c", "--control-ip-port", type=str, default="192.168.2.3:1024", help="main control system ipaddr and port")
+    parser.add_argument("-l", "--code-lower", type=int, default=0, help="Code scan lower limit")
+    parser.add_argument("-u", "--code-upper", type=int, default=58000, help="Code scan upper limit")
+    parser.add_argument("-s", "--code-step", type=int, default=2000, help="Code scan step size")
+    parser.add_argument("-p", "--prefix", type=str, default="data/", help="Data file prefix, can be used to put files under directories")
+    parser.add_argument("x", type=int, default=0, help="Chip location x")
+    parser.add_argument("y", type=int, default=0, help="Chip location y")
+
+    args = parser.parse_args()
+
+    datafname = args.prefix + "x{0:04d}y{1:04d}.dat".format(args.x, args.y)
+    print("Writing data to {0:s}".format(datafname))
+    fp = open(datafname, "a+")
+    fp.write("\n\n# Chip {0:d} {1:d}\n".format(args.x, args.y))
+
+    smuipport = args.smu_ip_port.split(':')
+    smu = SMU2450(smuipport[0], int(smuipport[1]))
+    smu.volt_on()
+    time.sleep(2)
+#    smu.volt_off()
+
+    ctrlipport = args.control_ip_port.split(':')
     s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-    s.connect((host,port))
+    s.connect((ctrlipport[0],int(ctrlipport[1])))
 
     cmd = Cmd()
     dac8568 = DAC8568(cmd)
-#    s.sendall(dac8568.turn_on_2V5_ref())
-#    s.sendall(dac8568.set_voltage(6, 1.2))
+    s.sendall(dac8568.turn_on_2V5_ref())
+    s.sendall(dac8568.set_voltage(6, 1.2))
 
     # enable SDM clock
 #    s.sendall(cmd.write_register(9, 0x01))
@@ -291,41 +338,54 @@ if __name__ == "__main__":
     else:
         tms1mmReg.set_k(5, 0)
 
-    tms1mmReg.set_k(6, 1) # 1 - K7 is closed, BufferX2 output to AOUT_BufferX2
-    tms1mmReg.set_k(7, 1) # 1 - K8 is closed, connect CSA out to AOUT1_CSA
-    tms1mmReg.set_dac(0, tms1mmReg.dac_volt2code(1.38)) # VBIASN R45
-    tms1mmReg.set_dac(1, tms1mmReg.dac_volt2code(1.55)) # VBIASP R47
-    tms1mmReg.set_dac(2, tms1mmReg.dac_volt2code(1.45)) # VCASN  R29
-    tms1mmReg.set_dac(3, tms1mmReg.dac_volt2code(1.35)) # VCASP  R27
-    # tms1mmReg.set_dac(4, dac_volt2code(1.58)) # VDIS   R16, use external DAC
-    #s.sendall(dac8568.set_voltage(4, 1.58))
-    tms1mmReg.set_dac(5, tms1mmReg.dac_volt2code(2.68)) # VREF   R14
+    for dacCode in xrange(args.code_lower, args.code_upper+1, args.code_step):
+        fp.write("{0:6d} ".format(dacCode))
 
-    data_to_send = tms1mmReg.get_config_vector()
-    print("Sent: 0x%0x" % (data_to_send))
+        tms1mmReg.set_k(6, 1) # 1 - K7 is closed, BufferX2 output to AOUT_BufferX2
+        tms1mmReg.set_k(7, 1) # 1 - K8 is closed, connect CSA out to AOUT1_CSA
+        tms1mmReg.set_dac(0, dacCode) # VBIASN R45
+        tms1mmReg.set_dac(1, dacCode) # VBIASP R47
+        tms1mmReg.set_dac(2, dacCode) # VCASN  R29
+        tms1mmReg.set_dac(3, dacCode) # VCASP  R27
+        tms1mmReg.set_dac(4, dacCode) # VDIS   R16, use external DAC
+        tms1mmReg.set_dac(5, dacCode) # VREF   R14
 
-    div=7
-    #shift_register_rw(s, (data_to_send), div)
+        data_to_send = tms1mmReg.get_config_vector()
+        print("Sent:   0x{0:0x}".format(data_to_send))
 
-    adc = ADS124S0X(cmd)
-    # reset
-    s.sendall(adc.write_spi(0x06<<24))
-    time.sleep(0.005) # > 4096*(tCLK = 4.096MHz)
-    # initialize
-    s.sendall(adc.initialize())
-    # get data
-    for ch in xrange(-1, 12):
-        # select channel
-        s.sendall(adc.select_channel(ch))
-        time.sleep(adc.acqDelay)
-        # read reg
-        ret = adc.read_reg(0x02)
-        s.sendall(ret)
-        val = adc.recv_din(s)
-        print("ch={:2d} 0x{:08x}".format(ch, val))
-        # RDATA
-        val = adc.recv_data(s)
-        c = "{:7.3f}C".format(adc.adctemp(val)) if ch == -1 else ""
-        print("0x{:08x} {:d} {:12.9f}V {}".format(val, val&0xffffff, adc.adcvolt(val), c))
+        div=7
+        # write/read twice for validation
+        shift_register_rw(s, (data_to_send), div)
+        ret = shift_register_rw(s, (data_to_send), div)
+        if data_to_send == ret:
+            print("Read-back successful.")
+        else:
+            print("Read-back failed!")
+
+        adc = ADS124S0X(cmd)
+        # reset
+        s.sendall(adc.write_spi(0x06<<24))
+        time.sleep(0.005) # > 4096*(tCLK = 4.096MHz)
+        # initialize
+        s.sendall(adc.initialize())
+        # get data
+        for ch in xrange(-1, 7):
+            # select channel
+            s.sendall(adc.select_channel(ch))
+            time.sleep(adc.acqDelay)
+            # read reg
+            ret = adc.read_reg(0x02)
+            s.sendall(ret)
+            val = adc.recv_din(s)
+            print("ch={0:2d} 0x{1:08x}".format(ch, val))
+            # RDATA
+            val = adc.recv_data(s)
+            c = "{0:7.3f}C".format(adc.adctemp(val)) if ch == -1 else ""
+            print("0x{0:08x} {1:d} {2:12.9f}V {3}".format(val, val&0xffffff, adc.adcvolt(val), c))
+            fp.write(" {0:12.9f}".format(adc.adcvolt(val)))
+        fp.write("\n")
+        fp.flush()
 
     s.close()
+    smu.volt_off()
+    fp.close()
